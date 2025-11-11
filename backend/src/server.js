@@ -1,18 +1,35 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 const app = express();
-const prisma = new PrismaClient();
 
-app.use(cors());
+// ✅ Middleware (temporarily open CORS)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Backend is running ");
+// ✅ Debug logger
+app.use((req, res, next) => {
+  console.log("✅ Request received:", req.method, req.url);
+  console.log("Headers:", req.headers);
+  next();
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ✅ Root route
+app.get("/", (req, res) => {
+  console.log("✅ Root route hit");
+  res.send("✅ Server is alive!");
+});
+
+// ✅ Routes
+app.use("/api/auth", authRoutes);
+
+// ✅ Start server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
