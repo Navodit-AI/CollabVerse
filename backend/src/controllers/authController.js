@@ -32,3 +32,16 @@ export const signup = async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(401).json({ message: "Invalid password" });
+
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+  res.json({ message: "Login success", token });
+};
+
