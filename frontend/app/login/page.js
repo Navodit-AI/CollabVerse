@@ -63,7 +63,13 @@ export default function Login() {
         }
         
         const data = await res.json().catch(() => ({ message: "Server error" }));
-        setError(data.message || data.error || `Login failed (${res.status})`);
+        
+        // Handle database connection errors
+        if (res.status === 503 && data.message && data.message.includes("Database connection")) {
+          setError("Database connection failed. The server cannot connect to MongoDB. Please contact support or try again later.");
+        } else {
+          setError(data.message || data.error || `Login failed (${res.status})`);
+        }
         setLoading(false);
         return;
       }

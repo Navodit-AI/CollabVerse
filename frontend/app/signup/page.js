@@ -53,7 +53,14 @@ export default function Signup() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({ message: "Server error" }));
-        setMessage(data.message || data.error || `Signup failed (${res.status})`);
+        
+        // Handle database connection errors
+        if (res.status === 503 && data.message && data.message.includes("Database connection")) {
+          setMessage("Database connection failed. The server cannot connect to MongoDB. Please contact support or try again later.");
+        } else {
+          setMessage(data.message || data.error || `Signup failed (${res.status})`);
+        }
+        setLoading(false);
         return;
       }
 
