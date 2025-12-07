@@ -25,23 +25,49 @@ export const signup = async (req, res) => {
 
     console.log("✅ User created:", newUser);
 
-    // 4. Send success response
-    res.status(201).json({ message: "User created successfully", user: newUser });
+    // 4. Generate JWT token
+    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET);
+
+    // 5. Send success response with token
+    res.status(201).json({ message: "User created successfully", token, user: newUser });
   } catch (err) {
     console.error("❌ Signup error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  console.log("✅ LOGIN endpoint hit");
+  try {
+    const { email, password } = req.body;
+    console.log("Incoming login data:", { email, hasPassword: !!password });
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(404).json({ message: "User not found" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ message: "Invalid password" });
+    // 1. Find user
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      console.log("User not found:", email);
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
-  res.json({ message: "Login success", token });
+    // 2. Verify password
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      console.log("Invalid password for user:", email);
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    // 3. Generate JWT token
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+    console.log("✅ Login successful for user:", email);
+
+    // 4. Send success response
+    res.json({ message: "Login success", token });
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
 };
 

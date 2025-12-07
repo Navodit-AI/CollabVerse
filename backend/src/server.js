@@ -6,17 +6,11 @@ import authRoutes from "./routes/authRoutes.js";
 dotenv.config();
 const app = express();
 
-// ✅ CORS Configuration
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL] 
-  : (process.env.NODE_ENV === "production" ? [] : ["http://localhost:3000"]);
-
+// ✅ CORS Configuration - Allow all origins for now
 app.use(cors({
-  origin: process.env.NODE_ENV === "production" && allowedOrigins.length > 0
-    ? allowedOrigins
-    : "*", // Allow all in development, restrict in production if FRONTEND_URL is set
+  origin: "*", // Allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
+  credentials: false,
 }));
 
 app.use(express.json());
