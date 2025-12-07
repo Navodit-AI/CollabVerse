@@ -13,4 +13,39 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  // Relations
+  ownedTeams    Team[]    @relation("TeamOwner")
+  memberTeams   Team[]    @relation("TeamMembers", fields: [teamIds], references: [id])
+  teamIds       String[]  @db.ObjectId
+}
+
+model Team {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  ownerId     String   @db.ObjectId
+  owner       User     @relation("TeamOwner", fields: [ownerId], references: [id])
+  
+  memberIds   String[] @db.ObjectId
+  members     User[]   @relation("TeamMembers", fields: [memberIds], references: [id])
+
+  projects    Project[]
+}
+
+model Project {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  status      String   @default("planned") // planned, in-progress, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  teamId      String   @db.ObjectId
+  team        Team     @relation(fields: [teamId], references: [id])
 }
