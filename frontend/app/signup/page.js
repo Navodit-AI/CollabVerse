@@ -1,82 +1,70 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import styles from "./signup.module.css";
 
-export default function SignupPage() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+export default function Signup() {
+  const router = useRouter();
+  const [form, setForm] = useState({ name:"", email:"", password:"" });
   const [message, setMessage] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async(e)=>{
     e.preventDefault();
-    setMessage("Registering...");
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+    const res = await fetch("http://localhost:8080/api/auth/signup", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(form)
+    });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage("✅ Signup successful!");
-      } else {
-        setMessage(`❌ ${data.message || "Signup failed"}`);
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      setMessage("⚠️ Network error");
+    const data = await res.json();
+    if(res.ok){
+      localStorage.setItem("token", data.token || "");
+      router.push("/dashboard");
+    } else {
+      setMessage(data.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow-md w-80 space-y-4"
-      >
-        <h2 className="text-xl font-semibold text-center">Sign Up</h2>
-        <input
-          name="name"
-          type="text"
-          placeholder="Full Name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-        >
-          Sign Up
-        </button>
-        <p className="text-sm text-center">{message}</p>
-      </form>
+    <div className={styles.background}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Create Account</h1>
+        <p className={styles.subtitle}>Join CollabVerse</p>
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <input 
+            name="name"
+            placeholder="Name"
+            className={styles.input}
+            onChange={(e)=> setForm({...form, name:e.target.value})}
+          />
+          <input 
+            name="email"
+            type="email"
+            placeholder="Email"
+            className={styles.input}
+            onChange={(e)=> setForm({...form, email:e.target.value})}
+          />
+          <input 
+            name="password"
+            type="password"
+            placeholder="Password"
+            className={styles.input}
+            onChange={(e)=> setForm({...form, password:e.target.value})}
+          />
+          <button className={styles.button}>Sign up</button>
+        </form>
+
+        {message && <p className={styles.error}>{message}</p>}
+
+        <p className={styles.footer}>
+          Already have an account?{" "}
+          <span className={styles.link} onClick={()=> router.push("/login")}>
+            Login
+          </span>
+        </p>
+      </div>
     </div>
   );
 }
