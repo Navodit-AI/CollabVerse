@@ -28,6 +28,14 @@ export const createTeam = async (req, res) => {
         res.status(201).json(team);
     } catch (error) {
         console.error("Create Team Error:", error);
+
+        if (error.message && (error.message.includes("Server selection timeout") || error.message.includes("connect ETIMEDOUT"))) {
+            return res.status(503).json({
+                message: "Database connection failed. Check your IP whitelist.",
+                error: "Service unavailable"
+            });
+        }
+
         res.status(500).json({ message: "Failed to create team", error: error.message });
     }
 };
