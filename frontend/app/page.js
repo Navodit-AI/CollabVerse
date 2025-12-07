@@ -3,23 +3,23 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#fafbfc] dark:bg-[#0f172a]">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Navigation */}
-      <nav className="w-full border-b border-[#e2e8f0] dark:border-[#1e293b] bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold text-[#1a1d29] dark:text-white">
+      <nav className="w-full px-6 py-4 sm:px-8 sm:py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             CollabVerse
-          </Link>
-          <div className="flex items-center gap-3">
+          </div>
+          <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="px-4 py-2 text-sm text-[#64748b] dark:text-[#94a3b8] hover:text-[#1a1d29] dark:hover:text-white transition-colors font-medium"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               Login
             </Link>
             <Link
               href="/signup"
-              className="px-4 py-2 text-sm bg-[#4f46e5] text-white rounded-lg hover:bg-[#4338ca] transition-colors font-medium"
+              className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium"
             >
               Sign Up
             </Link>
@@ -28,62 +28,63 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-6 py-16 sm:py-20">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#1a1d29] dark:text-white mb-4 leading-tight">
-            Study Together,
+      <main className="max-w-7xl mx-auto px-6 sm:px-8 py-16 sm:py-24">
+        <div className="text-center">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            Collaborate. Create.
             <br />
-            <span className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] bg-clip-text text-transparent">
-              Succeed Together
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              CollabVerse
             </span>
           </h1>
-          <p className="text-lg sm:text-xl text-[#64748b] dark:text-[#94a3b8] mb-8 max-w-2xl mx-auto">
-            The collaborative platform designed for students. Organize projects, share notes, and work together seamlessly.
+          <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
+            Your all-in-one platform for seamless collaboration and team productivity.
+            Work together, achieve more.
           </p>
           
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-20">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link
               href="/signup"
-              className="px-5 py-2.5 bg-[#4f46e5] text-white rounded-lg hover:bg-[#4338ca] transition-colors font-medium text-sm shadow-sm"
+              className="px-8 py-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 w-full sm:w-auto"
             >
               Get Started Free
             </Link>
             <Link
               href="/login"
-              className="px-5 py-2.5 bg-white dark:bg-[#1e293b] text-[#1a1d29] dark:text-white border border-[#e2e8f0] dark:border-[#334155] rounded-lg hover:border-[#4f46e5] dark:hover:border-[#6366f1] transition-colors font-medium text-sm"
+              className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-600 rounded-full hover:border-blue-600 dark:hover:border-blue-500 transition-colors font-semibold text-lg w-full sm:w-auto"
             >
               Sign In
             </Link>
           </div>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
-            <div className="p-6 bg-white dark:bg-[#1e293b] rounded-lg border border-[#e2e8f0] dark:border-[#334155] hover:border-[#4f46e5] dark:hover:border-[#6366f1] transition-colors">
-              <div className="text-3xl mb-3">📚</div>
-              <h3 className="text-lg font-semibold text-[#1a1d29] dark:text-white mb-2">
-                Study Groups
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 max-w-5xl mx-auto">
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Fast & Reliable
               </h3>
-              <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">
-                Create and join study groups. Share notes and collaborate on assignments.
+              <p className="text-gray-600 dark:text-gray-400">
+                Built for speed and performance. Get things done without the wait.
               </p>
             </div>
-            <div className="p-6 bg-white dark:bg-[#1e293b] rounded-lg border border-[#e2e8f0] dark:border-[#334155] hover:border-[#4f46e5] dark:hover:border-[#6366f1] transition-colors">
-              <div className="text-3xl mb-3">📝</div>
-              <h3 className="text-lg font-semibold text-[#1a1d29] dark:text-white mb-2">
-                Project Management
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Team Collaboration
               </h3>
-              <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">
-                Organize your projects and track progress with your team members.
+              <p className="text-gray-600 dark:text-gray-400">
+                Work together seamlessly with your team in real-time.
               </p>
             </div>
-            <div className="p-6 bg-white dark:bg-[#1e293b] rounded-lg border border-[#e2e8f0] dark:border-[#334155] hover:border-[#4f46e5] dark:hover:border-[#6366f1] transition-colors">
-              <div className="text-3xl mb-3">💬</div>
-              <h3 className="text-lg font-semibold text-[#1a1d29] dark:text-white mb-2">
-                Real-time Chat
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">🔒</div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Secure & Private
               </h3>
-              <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">
-                Communicate instantly with your team. Stay connected and productive.
+              <p className="text-gray-600 dark:text-gray-400">
+                Your data is protected with enterprise-grade security.
               </p>
             </div>
           </div>
@@ -91,9 +92,9 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t border-[#e2e8f0] dark:border-[#1e293b] mt-20 py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-sm text-[#64748b] dark:text-[#94a3b8]">
-          <p>&copy; 2024 CollabVerse. Built for students, by students.</p>
+      <footer className="w-full px-6 py-8 mt-20 border-t border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto text-center text-gray-600 dark:text-gray-400">
+          <p>&copy; 2024 CollabVerse. All rights reserved.</p>
         </div>
       </footer>
     </div>
