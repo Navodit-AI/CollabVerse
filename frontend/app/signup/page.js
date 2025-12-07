@@ -7,22 +7,89 @@ export default function Signup() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setLoading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      console.log("API URL:", apiUrl);
+      console.log("Full URL:", `${apiUrl}/api/auth/signup`);
+      console.log("Form data:", form);
+      
+      // First, test if backend is reachable
+      try {
+        const healthCheck = await fetch(`${apiUrl}/`, {
+          method: "GET",
+          mode: "cors",
+          signal: AbortSignal.timeout(10000), // 10 second timeout for health check
+        });
+        console.log("Health check status:", healthCheck.status);
+      } catch (healthError) {
+        console.warn("Health check failed, but continuing:", healthError);
+      }
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for Render wake-up
+      
+      console.log("Sending signup request...");
+      const res = await fetch(`${apiUrl}/api/auth/signup`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(form),
+        mode: "cors",
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      console.log("Response status:", res.status);
 
-    const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem("token", data.token || "");
-      router.push("/dashboard");
-    } else {
-      setMessage(data.message);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Server error" }));
+        setMessage(data.message || data.error || `Signup failed (${res.status})`);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Response data:", data);
+      
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        router.push("/dashboard");
+      } else {
+        setMessage("Account created but no token received. Please login.");
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      console.error("Error details:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+      });
+      
+      // More helpful error message
+      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+        setMessage("Request timed out after 60 seconds. The Render server may be starting up. Please wait a moment and try again.");
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Network request failed')) {
+        setMessage(`Cannot connect to server. Possible reasons:
+        • Backend is sleeping (Render free tier) - wait 30-60 seconds and try again
+        • Check your internet connection
+        • Open browser console (F12) and check for CORS errors
+        • API URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}`);
+      } else {
+        setMessage(`Error: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,9 +154,10 @@ export default function Signup() {
             </div>
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign up
+              {loading ? "Creating account..." : "Sign up"}
             </button>
           </form>
 

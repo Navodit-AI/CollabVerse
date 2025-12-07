@@ -8,27 +8,99 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/login`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      console.log("API URL:", apiUrl);
+      console.log("Full URL:", `${apiUrl}/api/auth/login`);
+      
+      // First, test if backend is reachable
+      try {
+        const healthCheck = await fetch(`${apiUrl}/`, {
+          method: "GET",
+          mode: "cors",
+          signal: AbortSignal.timeout(10000), // 10 second timeout for health check
+        });
+        console.log("Health check status:", healthCheck.status);
+      } catch (healthError) {
+        console.warn("Health check failed, but continuing:", healthError);
+      }
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for Render wake-up
+      
+      console.log("Sending login request...");
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ email, password }),
+        mode: "cors",
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
+      console.log("Response status:", res.status);
+
+      if (!res.ok) {
+        // Check if response is HTML (error page) or JSON
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          const text = await res.text();
+          console.error("Server returned HTML error page:", text);
+          setError("Server error. Please try again or check backend logs.");
+          setLoading(false);
+          return;
+        }
+        
+        const data = await res.json().catch(() => ({ message: "Server error" }));
+        setError(data.message || data.error || `Login failed (${res.status})`);
+        setLoading(false);
+        return;
+      }
 
       const data = await res.json();
-      if (res.ok) {
+      console.log("Response data:", data);
+      
+      if (data.token) {
         localStorage.setItem("token", data.token);
         router.push("/dashboard");
       } else {
-        setError(data.message || "Login failed");
+        setError("No token received from server");
+        setLoading(false);
       }
     } catch (err) {
-      setError("Network error");
+      console.error("Login error:", err);
+      console.error("Error details:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+      });
+      
+      // More helpful error message
+      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+        setError("Request timed out after 60 seconds. The Render server may be starting up. Please wait a moment and try again.");
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Network request failed')) {
+        setError(`Cannot connect to server. Possible reasons:
+        • Backend is sleeping (Render free tier) - wait 30-60 seconds and try again
+        • Check your internet connection
+        • Open browser console (F12) and check for CORS errors
+        • API URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}`);
+      } else {
+        setError(`Error: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,9 +156,10 @@ export default function Login() {
             </div>
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
