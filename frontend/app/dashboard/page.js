@@ -67,16 +67,19 @@ export default function Dashboard() {
         },
         body: JSON.stringify(newTeam)
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         setShowTeamModal(false);
         setNewTeam({ name: "", description: "" });
         fetchData(); // Refresh list
       } else {
-        const data = await res.json();
-        alert(data.message || "Failed to create team");
+        // Show detailed error if available
+        alert(data.message + (data.error ? `\nDetails: ${data.error}` : ""));
       }
     } catch (err) {
-      alert("Error creating team");
+      alert("Network or Server Error: " + err.message);
     }
   };
 
@@ -92,16 +95,18 @@ export default function Dashboard() {
         },
         body: JSON.stringify(newProject)
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         setShowProjectModal(false);
         setNewProject({ name: "", description: "", teamId: "" });
         fetchData(); // Refresh list
       } else {
-        const data = await res.json();
-        alert(data.message || "Failed to create project");
+        alert(data.message + (data.error ? `\nDetails: ${data.error}` : ""));
       }
     } catch (err) {
-      alert("Error creating project");
+      alert("Network or Server Error: " + err.message);
     }
   };
 
@@ -141,8 +146,8 @@ export default function Dashboard() {
           <button
             onClick={() => setActiveTab("teams")}
             className={`pb-4 px-2 text-lg font-medium transition-colors relative ${activeTab === "teams"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
           >
             Teams
@@ -153,8 +158,8 @@ export default function Dashboard() {
           <button
             onClick={() => setActiveTab("projects")}
             className={`pb-4 px-2 text-lg font-medium transition-colors relative ${activeTab === "projects"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
           >
             Projects
@@ -226,13 +231,13 @@ export default function Dashboard() {
                     projects.map((project) => (
                       <div key={project.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow relative overflow-hidden group">
                         <div className={`absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 rounded-full opacity-10 ${project.status === 'completed' ? 'bg-green-500' :
-                            project.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-500'
+                          project.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-500'
                           }`}></div>
 
                         <h3 className="text-xl font-bold mb-1">{project.name}</h3>
                         <span className={`inline-block px-2 py-0.5 text-xs rounded-full uppercase font-bold tracking-wide mb-3 ${project.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            project.status === 'in-progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                          project.status === 'in-progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                            'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                           }`}>
                           {project.status.replace('-', ' ')}
                         </span>
