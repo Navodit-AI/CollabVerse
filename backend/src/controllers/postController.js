@@ -2,6 +2,7 @@ import prisma from "../utils/prisma.js";
 
 // CREATE
 export const createPost = async (req, res) => {
+    
   try {
     const { title, description, domain, skills } = req.body;
     const authorId = req.user.id;
