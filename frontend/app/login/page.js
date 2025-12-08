@@ -19,7 +19,7 @@ export default function Login() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
       console.log("API URL:", apiUrl);
       console.log("Full URL:", `${apiUrl}/api/auth/login`);
-      
+
       // First, test if backend is reachable
       try {
         const healthCheck = await fetch(`${apiUrl}/`, {
@@ -31,15 +31,15 @@ export default function Login() {
       } catch (healthError) {
         console.warn("Health check failed, but continuing:", healthError);
       }
-      
+
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for Render wake-up
-      
+
       console.log("Sending login request...");
       const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
@@ -47,7 +47,7 @@ export default function Login() {
         mode: "cors",
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       console.log("Response status:", res.status);
 
@@ -61,9 +61,9 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        
+
         const data = await res.json().catch(() => ({ message: "Server error" }));
-        
+
         // Handle database connection errors
         if (res.status === 503 && data.message && data.message.includes("Database connection")) {
           setError("Database connection failed. The server cannot connect to MongoDB. Please contact support or try again later.");
@@ -76,9 +76,10 @@ export default function Login() {
 
       const data = await res.json();
       console.log("Response data:", data);
-      
+
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user)); // Fix: Save user data
         router.push("/dashboard");
       } else {
         setError("No token received from server");
@@ -92,7 +93,7 @@ export default function Login() {
         stack: err.stack,
         apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
       });
-      
+
       // More helpful error message
       if (err.name === 'AbortError' || err.name === 'TimeoutError') {
         setError("Request timed out after 60 seconds. The Render server may be starting up. Please wait a moment and try again.");

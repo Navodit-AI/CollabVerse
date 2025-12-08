@@ -1,11 +1,10 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
-import teamRoutes from "./routes/teamRoutes.js";
-import projectRoutes from "./routes/projectRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
-dotenv.config();
 const app = express();
 
 // ✅ CORS Configuration - Allow all origins for now
@@ -17,14 +16,12 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Debug logger (only in development)
-if (process.env.NODE_ENV !== "production") {
-  app.use((req, res, next) => {
-    console.log("✅ Request received:", req.method, req.url);
-    console.log("Headers:", req.headers);
-    next();
-  });
-}
+// ✅ Debug logger (ALWAYS ON)
+app.use((req, res, next) => {
+  console.log("✅ Request received:", req.method, req.url);
+  console.log("Headers:", req.headers);
+  next();
+});
 
 // ✅ Root route
 app.get("/", (req, res) => {
@@ -32,11 +29,15 @@ app.get("/", (req, res) => {
   res.send("✅ Server is alive!");
 });
 
+app.get("/api/posts/test", (req, res) => {
+  res.send("Posts route works!");
+});
+
 // ✅ Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/teams", teamRoutes);
-app.use("/api/projects", projectRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/users", userRoutes);
 
 // ✅ Start server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));

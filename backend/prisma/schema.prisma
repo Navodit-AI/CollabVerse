@@ -12,40 +12,25 @@ model User {
   name      String
   email     String   @unique
   password  String
+  role      String   @default("User") // "Developer", "Designer", "Manager"
+  skills    String[]
   createdAt DateTime @default(now())
 
   // Relations
-  ownedTeams    Team[]    @relation("TeamOwner")
-  memberTeams   Team[]    @relation("TeamMembers", fields: [teamIds], references: [id])
-  teamIds       String[]  @db.ObjectId
+  posts     Post[]   @relation("UserPosts")
 }
 
-model Team {
+// Project Idea (Post)
+model Post {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
+  title       String
+  description String
+  domain      String   // e.g., "Web", "AI", "Mobile"
+  skills      String[] // Required skills
+  status      String   @default("Open")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  ownerId     String   @db.ObjectId
-  owner       User     @relation("TeamOwner", fields: [ownerId], references: [id])
-  
-  memberIds   String[] @db.ObjectId
-  members     User[]   @relation("TeamMembers", fields: [memberIds], references: [id])
-
-  projects    Project[]
-}
-
-model Project {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
-  status      String   @default("planned") // planned, in-progress, completed
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  teamId      String   @db.ObjectId
-  team        Team     @relation(fields: [teamId], references: [id])
+  authorId    String   @db.ObjectId
+  author      User     @relation("UserPosts", fields: [authorId], references: [id])
 }
