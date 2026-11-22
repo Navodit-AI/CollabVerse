@@ -1,8 +1,8 @@
 import prisma from "../utils/prisma.js";
+import { isValidObjectId } from "../utils/validate.js";
 
 // CREATE
 export const createPost = async (req, res) => {
-    
   try {
     const { title, description, domain, skills } = req.body;
     const authorId = req.user.id;
@@ -16,7 +16,7 @@ export const createPost = async (req, res) => {
         title,
         description,
         domain,
-        skills: Array.isArray(skills) ? skills : [],
+        skills: Array.isArray(skills) ? skills.filter(Boolean) : [],
         authorId,
       },
     });
@@ -28,13 +28,47 @@ export const createPost = async (req, res) => {
   }
 };
 
-// READ ALL
+// READ ALL (search, filter, sort, paginate)
+// Query params: page, limit, search, domain, skill, status, sort=newest|oldest
 export const getPosts = async (req, res) => {
   try {
-    const posts = await prisma.post.findMany({
-      include: { author: { select: { id: true, name: true, email: true } } },
+    let { page = 1, limit = 10, search = "", domain, skill, status, sort = "newest" } = req.query;
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.max(1, Math.min(50, parseInt(limit) || 10));
+
+    const AND = [];
+    if (search) {
+      AND.push({
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ],
+      });
+    }
+    if (domain && domain !== "All") AND.push({ domain: { equals: domain } });
+    if (skill) AND.push({ skills: { has: skill } });
+    if (status && status !== "All") AND.push({ status: { equals: status } });
+
+    const where = AND.length ? { AND } : {};
+
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true } },
+          _count: { select: { likes: true, comments: true } },
+        },
+        orderBy: { createdAt: sort === "oldest" ? "asc" : "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.post.count({ where }),
+    ]);
+
+    res.json({
+      data: posts,
+      meta: { total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) },
     });
-    res.json(posts);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch posts", error: err.message });
@@ -45,17 +79,24 @@ export const getPosts = async (req, res) => {
 export const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid post ID" });
+
     const { title, description, domain, skills, status } = req.body;
     const userId = req.user.id;
 
-    // Check ownership
     const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) return res.status(404).json({ message: "Post not found" });
     if (existingPost.authorId !== userId) return res.status(403).json({ message: "Forbidden" });
 
     const updated = await prisma.post.update({
       where: { id },
-      data: { title, description, domain, skills, status },
+      data: {
+        title,
+        description,
+        domain,
+        skills: Array.isArray(skills) ? skills.filter(Boolean) : undefined,
+        status,
+      },
     });
 
     res.json(updated);
@@ -69,6 +110,8 @@ export const updatePost = async (req, res) => {
 export const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid post ID" });
+
     const userId = req.user.id;
 
     const existingPost = await prisma.post.findUnique({ where: { id } });

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL; // ✅ Render backend URL
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"; // ✅ Render backend URL
 
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("projects");
@@ -164,27 +164,29 @@ export default function Dashboard() {
           placeholder={activeTab === "projects" ? "Search Projects..." : "Search People..."}
           className="flex-1 bg-black border border-gray-700 p-2 rounded text-white"
           value={activeTab === "projects" ? postSearch : peerSearch}
-          onChange={(e) =>
-            activeTab === "projects" ? setPostSearch(e.target.value) : setPeerSearch(e.target.value)
-          }
+          onChange={(e) => {
+            setMeta((p) => ({ ...p, page: 1 }));
+            activeTab === "projects" ? setPostSearch(e.target.value) : setPeerSearch(e.target.value);
+          }}
         />
 
         {activeTab === "projects" ? (
           <select
             className="bg-black border border-gray-700 p-2 rounded text-white"
             value={postDomain}
-            onChange={(e) => setPostDomain(e.target.value)}
+            onChange={(e) => { setMeta((p) => ({ ...p, page: 1 })); setPostDomain(e.target.value); }}
           >
             <option value="All">All Domains</option>
             <option value="Web">Web Dev</option>
             <option value="AI">AI/ML</option>
             <option value="Mobile">Mobile App</option>
+            <option value="Game">Game Dev</option>
           </select>
         ) : (
           <select
             className="bg-black border border-gray-700 p-2 rounded text-white"
             value={peerRole}
-            onChange={(e) => setPeerRole(e.target.value)}
+            onChange={(e) => { setMeta((p) => ({ ...p, page: 1 })); setPeerRole(e.target.value); }}
           >
             <option value="All">All Roles</option>
             <option value="Developer">Developer</option>
@@ -224,7 +226,8 @@ export default function Dashboard() {
                   {post.description}
                 </p>
                 <div className="flex justify-between items-center text-sm border-t border-gray-800 pt-4 text-gray-500">
-                  <span>By {post.author.name}</span>
+                  <span>By {post.author?.name ?? "Unknown"}</span>
+                  <span>♥ {post._count?.likes ?? 0} · 💬 {post._count?.comments ?? 0}</span>
                   <span className={`${post.status === "Open" ? "text-green-400" : "text-red-400"}`}>
                     {post.status}
                   </span>

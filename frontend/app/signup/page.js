@@ -69,6 +69,7 @@ export default function Signup() {
       
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user)); // dashboard needs this
         router.push("/dashboard");
       } else {
         setMessage("Account created but no token received. Please login.");

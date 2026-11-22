@@ -110,7 +110,8 @@ export const login = async (req, res) => {
       console.log("User not found:", email);
       // Return 401 or 404. 400/401 is often better for security (not gathering emails), but 404 is clear for dev.
       // Let's stick to helpful but safe.
-      return res.status(404).json({ message: "User not found" });
+      // Same response as a wrong password so the endpoint can't be used to probe which emails exist
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // --- 2. Verify password ---

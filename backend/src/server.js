@@ -4,22 +4,28 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
+import likeRoutes from "./routes/likeRoutes.js";
 
 const app = express();
 
-// ✅ CORS Configuration - Allow all origins for now
+// ✅ CORS: restrict to FRONTEND_URL (comma-separated list allowed) when set; otherwise allow all (dev)
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 app.use(cors({
-  origin: "*", // Allow all origins
+  origin: allowedOrigins.length ? allowedOrigins : "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: false,
 }));
 
 app.use(express.json());
 
-// ✅ Debug logger (ALWAYS ON)
+// ✅ Request logger (never log headers — they contain users' Authorization tokens)
 app.use((req, res, next) => {
-  console.log("✅ Request received:", req.method, req.url);
-  console.log("Headers:", req.headers);
+  console.log(`${req.method} ${req.url}`);
   next();
 });
 
@@ -37,6 +43,8 @@ app.get("/api/posts/test", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/likes", likeRoutes);
 
 // ✅ Start server
 const PORT = process.env.PORT || 8080;
