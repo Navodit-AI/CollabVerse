@@ -18,6 +18,8 @@ model User {
 
   // Relations
   posts     Post[]   @relation("UserPosts")
+  comments  Comment[]
+  likes     Like[]
 }
 
 // Project Idea (Post)
@@ -30,7 +32,34 @@ model Post {
   status      String   @default("Open")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   authorId    String   @db.ObjectId
   author      User     @relation("UserPosts", fields: [authorId], references: [id])
+
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  createdAt DateTime @default(now())
+
+  authorId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id])
+
+  postId    String   @db.ObjectId
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+
+  authorId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id])
+
+  postId    String   @db.ObjectId
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, postId])
 }
