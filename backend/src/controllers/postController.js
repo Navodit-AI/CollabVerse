@@ -51,12 +51,16 @@ export const getPosts = async (req, res) => {
 
     const where = AND.length ? { AND } : {};
 
-    const [posts, total] = await Promise.all([
+    const userId = req.user?.id;
+
+    const [rawPosts, total] = await Promise.all([
       prisma.post.findMany({
         where,
         include: {
           author: { select: { id: true, name: true } },
           _count: { select: { likes: true, comments: true } },
+          // Only this user's like (0 or 1 rows) — tells the UI whether to show the heart filled
+          ...(userId && { likes: { where: { authorId: userId }, select: { id: true } } }),
         },
         orderBy: { createdAt: sort === "oldest" ? "asc" : "desc" },
         skip: (page - 1) * limit,
@@ -64,6 +68,8 @@ export const getPosts = async (req, res) => {
       }),
       prisma.post.count({ where }),
     ]);
+
+    const posts = rawPosts.map(({ likes, ...post }) => ({ ...post, likedByMe: Boolean(likes?.length) }));
 
     res.json({
       data: posts,

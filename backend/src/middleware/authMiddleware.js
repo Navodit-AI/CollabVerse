@@ -21,3 +21,19 @@ export const authenticate = async (req, res, next) => {
     res.status(401).json({ message: "Unauthorized", error: err.message });
   }
 };
+
+// Like `authenticate`, but never rejects: attaches req.user when a valid token is present
+// so public endpoints can personalise their response (e.g. "likedByMe").
+export const optionalAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return next();
+
+  try {
+    const decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { id: true, email: true, role: true } });
+    if (user) req.user = user;
+  } catch {
+    // invalid/expired token on a public route: treat as anonymous
+  }
+  next();
+};

@@ -1,11 +1,13 @@
 import prisma from "../utils/prisma.js";
 
+const ALLOWED_ROLES = ["User", "Developer", "Designer", "Manager"];
+
 // ✅ GET USERS (Find Peers)
 export const getUsers = async (req, res) => {
     try {
         let { page = 1, limit = 10, search = "", role, skill } = req.query;
-        page = Math.max(1, parseInt(page));
-        limit = Math.max(1, Math.min(50, parseInt(limit)));
+        page = Math.max(1, parseInt(page) || 1);
+        limit = Math.max(1, Math.min(50, parseInt(limit) || 10));
 
         const where = {
             AND: []
@@ -15,7 +17,7 @@ export const getUsers = async (req, res) => {
             where.AND.push({
                 OR: [
                     { name: { contains: search, mode: "insensitive" } },
-                    { email: { contains: search, mode: "insensitive" } }
+                    { skills: { has: search } }
                 ]
             });
         }
@@ -33,7 +35,6 @@ export const getUsers = async (req, res) => {
                 select: {
                     id: true,
                     name: true,
-                    email: true,
                     role: true,
                     skills: true,
                     createdAt: true
@@ -51,7 +52,7 @@ export const getUsers = async (req, res) => {
                 total,
                 page,
                 limit,
-                totalPages: Math.ceil(total / limit)
+                totalPages: Math.max(1, Math.ceil(total / limit))
             }
         });
     } catch (error) {
@@ -66,9 +67,23 @@ export const updateProfile = async (req, res) => {
         const userId = req.user.id;
         const { role, skills } = req.body;
 
+        const data = {};
+        if (role !== undefined) {
+            if (!ALLOWED_ROLES.includes(role)) {
+                return res.status(400).json({ message: `Role must be one of: ${ALLOWED_ROLES.join(", ")}` });
+            }
+            data.role = role;
+        }
+        if (skills !== undefined) {
+            if (!Array.isArray(skills) || !skills.every((s) => typeof s === "string")) {
+                return res.status(400).json({ message: "Skills must be an array of strings" });
+            }
+            data.skills = [...new Set(skills.map((s) => s.trim()).filter(Boolean))].slice(0, 20);
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: { role, skills },
+            data,
             select: { id: true, name: true, email: true, role: true, skills: true }
         });
 
