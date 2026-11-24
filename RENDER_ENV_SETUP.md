@@ -32,6 +32,16 @@ When deploying your backend to Render, add these environment variables in your R
    - This restricts CORS to only allow requests from your frontend
    - If not set, CORS will allow all origins (less secure)
 
+6. **GEMINI_API_KEY** (Required for the Verse AI assistant, free)
+   - Create a free key at https://aistudio.google.com (no card needed)
+   - Without it the rest of the app works normally; the assistant replies that it isn't configured
+   - Free tier: Google may use chat content to improve its products, and daily limits apply
+   - Each user is limited to 20 assistant messages per 10 minutes, so one person can't use up the shared free quota
+
+7. **GEMINI_MODEL** (Optional)
+   - Defaults to `gemini-3.5-flash-lite` (free tier)
+   - Change it here if Google retires that model; no code change needed
+
 ### How to Add on Render:
 1. Go to your Render dashboard
 2. Select your backend service
@@ -71,6 +81,7 @@ DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/database?retry
 JWT_SECRET="your-local-secret-key"
 PORT=8080
 NODE_ENV=development
+GEMINI_API_KEY="..."   # optional locally; enables the Verse AI assistant (free key from aistudio.google.com)
 ```
 
 ### Frontend (.env.local file in `/frontend` folder):

@@ -1,26 +1,214 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ─────────────────────────────────────────────
+   CollabVerse design tokens
+   Charcoal base · silver text · one yellow accent
+   ───────────────────────────────────────────── */
+/* Fonts come from next/font CSS variables set on <body>, so they must be inlined
+   (a plain @theme var would resolve at :root, where those variables don't exist). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  /* Surfaces (dark → light) */
+  --color-ink-950: #0e0f11; /* page */
+  --color-ink-900: #141518; /* raised page / nav */
+  --color-ink-850: #1a1c20; /* cards */
+  --color-ink-800: #212429; /* inputs, hover cards */
+  --color-ink-700: #2c3036; /* borders */
+  --color-ink-600: #3c4148; /* strong borders */
+
+  /* Text */
+  --color-silver-100: #eceef0; /* primary text */
+  --color-silver-300: #c3c7cc; /* secondary text */
+  --color-silver-400: #9aa0a7; /* muted text */
+  --color-silver-500: #7d838b; /* faint text, placeholders */
+
+  /* The one accent. Use it only for the main action on screen. */
+  --color-sun: #ffc93c;
+  --color-sun-soft: #ffd76a;
+  --color-sun-deep: #e6ad1c;
+  --color-on-sun: #15140f;
+
+  /* Status */
+  --color-mint: #6fdc8c;
+  --color-rose: #ff6b5b;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-rise: rise 0.5s var(--ease-out-expo) both;
+  --animate-pop: pop 0.35s var(--ease-spring);
+
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-ink-950);
+  }
+  body {
+    background: var(--color-ink-950);
+    color: var(--color-silver-100);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-sun);
+    color: var(--color-on-sun);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-sun);
+    outline-offset: 2px;
+  }
+  button:not(:disabled), [role="button"] { cursor: pointer; }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    transition: transform 0.25s var(--ease-spring), background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.25s;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.96); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--color-sun);
+    color: var(--color-on-sun);
+    box-shadow: 0 0 0 0 rgb(255 201 60 / 0);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-sun-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgb(255 201 60 / 0.55);
+  }
+
+  .btn-ghost {
+    color: var(--color-silver-100);
+    border: 1px solid var(--color-ink-600);
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-silver-400);
+    background: var(--color-ink-800);
+  }
+
+  .btn-quiet {
+    color: var(--color-silver-400);
+    padding: 0.5rem 0.75rem;
+  }
+  .btn-quiet:hover:not(:disabled) { color: var(--color-silver-100); }
+
+  /* Surfaces */
+  .card {
+    background: var(--color-ink-850);
+    border: 1px solid var(--color-ink-700);
+    border-radius: 1.25rem;
+  }
+
+  /* Form controls */
+  .field {
+    width: 100%;
+    background: var(--color-ink-800);
+    border: 1px solid var(--color-ink-700);
+    border-radius: 0.875rem;
+    padding: 0.75rem 1rem;
+    color: var(--color-silver-100);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field::placeholder { color: var(--color-silver-500); }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-sun);
+    box-shadow: 0 0 0 3px rgb(255 201 60 / 0.15);
+  }
+  select.field {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0a7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+
+  .label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-silver-300);
+    margin-bottom: 0.375rem;
+  }
+
+  /* Small labels */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--color-ink-800);
+    border: 1px solid var(--color-ink-700);
+    color: var(--color-silver-300);
+  }
+  .eyebrow {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-silver-400);
+  }
+
+  /* Big editorial headlines */
+  .display {
+    font-family: var(--font-instrument-serif), ui-serif, Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

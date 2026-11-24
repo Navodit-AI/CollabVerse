@@ -22,7 +22,8 @@ users can create project ideas, search for collaborators, and join projects base
 * Sort by relevance and dates
 * Server-side pagination
 * Collaboration request system
-* Likes and comments
+* Likes and comments (like button, comment threads)
+* Verse: an AI assistant (Google Gemini, free tier) that knows the open projects and people on the platform
 * Fully deployed frontend and backend
 
 
@@ -42,10 +43,9 @@ Frontend (React.js) → Backend (Node.js + Express) → MongoDB Atlas
 
 ### Frontend
 
-* React.js
-* React Router
-* *HTML
-* CSS
+* Next.js (React)
+* Tailwind CSS
+* GSAP (animations)
 
 ### Backend
 

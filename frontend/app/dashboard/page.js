@@ -1,346 +1,301 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import Logo from "@/components/Logo";
+import Avatar from "@/components/Avatar";
+import ChatWidget from "@/components/ChatWidget";
+import NewPostModal from "@/components/NewPostModal";
+import PostDrawer from "@/components/PostDrawer";
+import PostCard, { CardSkeleton, DOMAINS, PeerCard } from "@/components/PostCard";
+import { ArrowIcon, LogoutIcon, PlusIcon, SearchIcon } from "@/components/Icons";
+import { api, clearSession, getStoredUser, getToken } from "@/lib/api";
+
+const PAGE_SIZE = 9;
+const ROLES = ["Developer", "Designer", "Manager"];
+
+const TABS = {
+  projects: {
+    label: "Projects",
+    heading: <>Find a project worth <em className="text-sun">building.</em></>,
+    endpoint: "/api/posts",
+    filterParam: "domain",
+    filters: DOMAINS.map((d) => ({ value: d.value, label: d.label })),
+    searchPlaceholder: "Search projects…",
+    noun: ["open project", "open projects"],
+  },
+  peers: {
+    label: "People",
+    heading: <>Find your <em className="text-sun">people.</em></>,
+    endpoint: "/api/users",
+    filterParam: "role",
+    filters: ROLES.map((r) => ({ value: r, label: `${r}s` })),
+    searchPlaceholder: "Search by name or skill…",
+    noun: ["person", "people"],
+  },
+};
+
+function useDebounced(value, ms = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
+// Read the logged-in user from localStorage without a hydration mismatch (server snapshot is null).
+const subscribeStorage = (cb) => {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+};
+function useStoredUser() {
+  const raw = useSyncExternalStore(subscribeStorage, () => (getToken() ? localStorage.getItem("user") : null), () => null);
+  return useMemo(() => (raw ? getStoredUser() : null), [raw]);
+}
 
 export default function Dashboard() {
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"; // ✅ Render backend URL
+  const user = useStoredUser();
 
-  const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("projects");
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("projects");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const query = useDebounced(search.trim());
 
-  const [posts, setPosts] = useState([]);
-  const [peers, setPeers] = useState([]);
-  const [meta, setMeta] = useState({ page: 1, totalPages: 1 });
+  const [items, setItems] = useState([]);
+  const [meta, setMeta] = useState({ total: 0, totalPages: 1 });
+  const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  // `loading` is derived: true until the response for the current request has landed.
+  const requestKey = `${tab}|${page}|${query}|${filter}|${reloadKey}`;
+  const [loadedKey, setLoadedKey] = useState(null);
+  const loading = loadedKey !== requestKey;
 
-  const [postSearch, setPostSearch] = useState("");
-  const [postDomain, setPostDomain] = useState("All");
+  const [showNewPost, setShowNewPost] = useState(false);
+  const [openPostId, setOpenPostId] = useState(null);
 
-  const [peerSearch, setPeerSearch] = useState("");
-  const [peerRole, setPeerRole] = useState("All");
+  const config = TABS[tab];
 
-  const [showModal, setShowModal] = useState(false);
-  const [newPost, setNewPost] = useState({
-    title: "",
-    description: "",
-    domain: "Web",
-    skills: ""
-  });
-
+  // Auth gate
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (!getToken()) router.replace("/login");
+  }, [router]);
 
-    fetchData();
-  }, [activeTab, meta.page, postSearch, postDomain, peerSearch, peerRole]);
+  // Fetch the current tab. AbortController drops stale responses when filters change quickly.
+  useEffect(() => {
+    if (!getToken()) return;
+    const controller = new AbortController();
+    const params = new URLSearchParams({ page, limit: PAGE_SIZE });
+    if (query) params.set("search", query);
+    if (filter !== "All") params.set(config.filterParam, filter);
 
-  const fetchData = async () => {
-    const token = localStorage.getItem("token");
-    setLoading(true);
+    api(`${config.endpoint}?${params}`, { signal: controller.signal })
+      .then((data) => {
+        setItems(data.data || []);
+        setMeta({ total: data.meta?.total ?? 0, totalPages: Math.max(1, data.meta?.totalPages ?? 1) });
+        setError("");
+      })
+      .catch((err) => !controller.signal.aborted && setError(err.message))
+      .finally(() => !controller.signal.aborted && setLoadedKey(requestKey));
+    return () => controller.abort();
+  }, [config, page, query, filter, requestKey]);
 
-    try {
-      const query = new URLSearchParams({ page: meta.page, limit: 6 });
-
-      if (activeTab === "projects") {
-        if (postSearch) query.append("search", postSearch);
-        if (postDomain !== "All") query.append("domain", postDomain);
-
-        const res = await fetch(`${API}/api/posts?${query}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setPosts(data.data || []);
-          setMeta(prev => ({ ...prev, ...data.meta }));
-        }
-
-      } else if (activeTab === "peers") {
-        if (peerSearch) query.append("search", peerSearch);
-        if (peerRole !== "All") query.append("role", peerRole);
-
-        const res = await fetch(`${API}/api/users?${query}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setPeers(data.data || []);
-          setMeta(prev => ({ ...prev, ...data.meta }));
-        }
-      }
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const switchTab = (next) => {
+    if (next === tab) return;
+    setTab(next);
+    setSearch("");
+    setFilter("All");
+    setPage(1);
+    setItems([]);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const logout = () => {
+    clearSession();
+    sessionStorage.removeItem("verse-chat");
     router.push("/login");
   };
 
-  const handleCreatePost = async () => {
-    const token = localStorage.getItem("token");
+  const updatePost = useCallback((id, fn) => setItems((list) => list.map((p) => (p.id === id ? fn(p) : p))), []);
 
-    try {
-      const res = await fetch(`${API}/api/posts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...newPost,
-          skills: newPost.skills.split(",").map(s => s.trim())
-        })
+  // Optimistic like: flip immediately, reconcile with the server's answer, roll back on failure.
+  const toggleLike = useCallback(
+    async (post) => {
+      const wasLiked = post.likedByMe;
+      const flip = (p, liked) => ({
+        ...p,
+        likedByMe: liked,
+        _count: { ...p._count, likes: Math.max(0, (p._count?.likes ?? 0) + (liked === p.likedByMe ? 0 : liked ? 1 : -1)) },
       });
-
-      if (res.ok) {
-        setShowModal(false);
-        setNewPost({ title: "", description: "", domain: "Web", skills: "" });
-
-        if (activeTab === "projects") fetchData();
-        else setActiveTab("projects");
-
-      } else {
-        const data = await res.json();
-        alert(data.message || "Failed to create post.");
+      updatePost(post.id, (p) => flip(p, !wasLiked));
+      try {
+        const { liked } = await api("/api/likes", { method: "POST", body: { postId: post.id } });
+        updatePost(post.id, (p) => flip(p, liked));
+      } catch (err) {
+        updatePost(post.id, (p) => flip(p, wasLiked));
+        setError(err.message);
       }
+    },
+    [updatePost]
+  );
 
-    } catch {
-      alert("Error creating post");
-    }
-  };
+  const changeCommentCount = useCallback(
+    (id, delta) => updatePost(id, (p) => ({ ...p, _count: { ...p._count, comments: Math.max(0, (p._count?.comments ?? 0) + delta) } })),
+    [updatePost]
+  );
 
-  if (!user && loading) return <p className="text-white p-10">Loading...</p>;
-  if (!user) return null;
+  if (!user) return <div className="min-h-screen" />;
+
+  const openPost = tab === "projects" ? items.find((p) => p.id === openPostId) : null;
+  const [singular, plural] = config.noun;
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-10">
+    <div className="min-h-screen">
+      {/* Nav */}
+      <header className="sticky top-0 z-30 border-b border-ink-700/70 bg-ink-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+          <Logo href="/dashboard" />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-          CollabVerse
-        </h1>
-        <div className="flex gap-4 items-center">
-          <span className="text-gray-400">Hi, {user.name}</span>
-          <button onClick={handleLogout} className="text-red-400 hover:text-red-300">
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-6 mb-8 border-b border-gray-800 pb-2">
-        <button
-          onClick={() => { setActiveTab("projects"); setMeta({ page: 1, totalPages: 1 }); }}
-          className={`text-lg font-medium pb-2 ${activeTab === "projects" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500"}`}
-        >
-          Find Projects
-        </button>
-
-        <button
-          onClick={() => { setActiveTab("peers"); setMeta({ page: 1, totalPages: 1 }); }}
-          className={`text-lg font-medium pb-2 ${activeTab === "peers" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500"}`}
-        >
-          Find Peers
-        </button>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
-        <input
-          placeholder={activeTab === "projects" ? "Search Projects..." : "Search People..."}
-          className="flex-1 bg-black border border-gray-700 p-2 rounded text-white"
-          value={activeTab === "projects" ? postSearch : peerSearch}
-          onChange={(e) => {
-            setMeta((p) => ({ ...p, page: 1 }));
-            activeTab === "projects" ? setPostSearch(e.target.value) : setPeerSearch(e.target.value);
-          }}
-        />
-
-        {activeTab === "projects" ? (
-          <select
-            className="bg-black border border-gray-700 p-2 rounded text-white"
-            value={postDomain}
-            onChange={(e) => { setMeta((p) => ({ ...p, page: 1 })); setPostDomain(e.target.value); }}
-          >
-            <option value="All">All Domains</option>
-            <option value="Web">Web Dev</option>
-            <option value="AI">AI/ML</option>
-            <option value="Mobile">Mobile App</option>
-            <option value="Game">Game Dev</option>
-          </select>
-        ) : (
-          <select
-            className="bg-black border border-gray-700 p-2 rounded text-white"
-            value={peerRole}
-            onChange={(e) => { setMeta((p) => ({ ...p, page: 1 })); setPeerRole(e.target.value); }}
-          >
-            <option value="All">All Roles</option>
-            <option value="Developer">Developer</option>
-            <option value="Designer">Designer</option>
-            <option value="Manager">Manager</option>
-          </select>
-        )}
-
-        {activeTab === "projects" && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold transition-all shadow-lg hover:shadow-blue-500/20"
-          >
-            + Post Idea
-          </button>
-        )}
-      </div>
-
-      {/* Content Grid */}
-      {loading ? (
-        <p className="text-gray-500">Loading data...</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {activeTab === "projects" &&
-            posts.map((post) => (
-              <div
-                key={post.id}
-                className="bg-gray-900 border border-gray-800 p-6 rounded-xl hover:border-gray-700 transition-all hover:-translate-y-1"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold">{post.title}</h3>
-                  <span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">
-                    {post.domain}
-                  </span>
-                </div>
-                <p className="text-gray-400 text-sm mb-6 h-20 overflow-hidden">
-                  {post.description}
-                </p>
-                <div className="flex justify-between items-center text-sm border-t border-gray-800 pt-4 text-gray-500">
-                  <span>By {post.author?.name ?? "Unknown"}</span>
-                  <span>♥ {post._count?.likes ?? 0} · 💬 {post._count?.comments ?? 0}</span>
-                  <span className={`${post.status === "Open" ? "text-green-400" : "text-red-400"}`}>
-                    {post.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-
-          {activeTab === "peers" &&
-            peers.map((peer) => (
-              <div
-                key={peer.id}
-                className="bg-gray-900 border border-gray-800 p-6 rounded-xl hover:border-gray-700 transition-all"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center font-bold text-xl">
-                    {peer.name[0]}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold">{peer.name}</h3>
-                    <p className="text-gray-400 text-sm">{peer.role}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {peer.skills.map((skill, i) => (
-                    <span
-                      key={i}
-                      className="text-xs bg-blue-900/30 text-blue-300 px-2 py-1 rounded"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {meta.totalPages > 1 && (
-        <div className="flex justify-center mt-10 gap-4">
-          <button
-            disabled={meta.page <= 1}
-            onClick={() => setMeta((p) => ({ ...p, page: p.page - 1 }))}
-            className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="py-2 text-gray-500">
-            Page {meta.page} of {meta.totalPages}
-          </span>
-          <button
-            disabled={meta.page >= meta.totalPages}
-            onClick={() => setMeta((p) => ({ ...p, page: p.page + 1 }))}
-            className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 p-8 rounded-2xl w-full max-w-lg border border-gray-700 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6">Start a Project</h2>
-            <input
-              className="w-full bg-black border border-gray-800 p-3 rounded mb-4 focus:border-blue-500 outline-none"
-              placeholder="Project Title"
-              value={newPost.title}
-              onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-            />
-            <div className="flex gap-4 mb-4">
-              <select
-                className="flex-1 bg-black border border-gray-800 p-3 rounded"
-                value={newPost.domain}
-                onChange={(e) => setNewPost({ ...newPost, domain: e.target.value })}
-              >
-                <option value="Web">Web Development</option>
-                <option value="AI">AI/Machine Learning</option>
-                <option value="Mobile">Mobile Apps</option>
-                <option value="Game">Game Dev</option>
-              </select>
-            </div>
-            <input
-              className="w-full bg-black border border-gray-800 p-3 rounded mb-4 focus:border-blue-500 outline-none"
-              placeholder="Required Skills (e.g. React, Python)"
-              value={newPost.skills}
-              onChange={(e) => setNewPost({ ...newPost, skills: e.target.value })}
-            />
-            <textarea
-              className="w-full bg-black border border-gray-800 p-3 rounded mb-6 h-32 focus:border-blue-500 outline-none"
-              placeholder="Describe your project..."
-              value={newPost.description}
-              onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={handleCreatePost}
-                className="flex-1 bg-blue-600 py-3 rounded font-bold hover:bg-blue-500"
-              >
-                Launch Project
+          <nav aria-label="Sections" className="hidden sm:flex rounded-full border border-ink-700 bg-ink-900 p-1">
+            {Object.entries(TABS).map(([key, t]) => (
+              <button key={key} type="button" onClick={() => switchTab(key)} aria-current={tab === key ? "page" : undefined}
+                className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all duration-300 ${
+                  tab === key ? "bg-silver-100 text-ink-950" : "text-silver-400 hover:text-silver-100"
+                }`}>
+                {t.label}
               </button>
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 bg-gray-800 py-3 rounded font-bold hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-2.5 text-sm text-silver-300 md:flex">
+              <Avatar name={user.name} size={30} />
+              {user.name}
+            </span>
+            <button type="button" onClick={logout} className="btn-quiet inline-flex items-center gap-1.5 rounded-full text-sm" aria-label="Log out">
+              <LogoutIcon size={16} />
+              <span className="hidden sm:inline">Log out</span>
+            </button>
           </div>
         </div>
-      )}
 
+        {/* Mobile tabs */}
+        <nav aria-label="Sections" className="flex border-t border-ink-700/70 sm:hidden">
+          {Object.entries(TABS).map(([key, t]) => (
+            <button key={key} type="button" onClick={() => switchTab(key)} aria-current={tab === key ? "page" : undefined}
+              className={`flex-1 py-2.5 text-sm font-medium ${tab === key ? "text-silver-100 shadow-[inset_0_-2px_0_var(--color-sun)]" : "text-silver-500"}`}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-5 pb-32 pt-12 sm:px-8 sm:pt-16">
+        {/* Heading */}
+        <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div key={tab} className="animate-rise">
+            <p className="eyebrow mb-4">
+              {loading ? "Loading…" : `${meta.total} ${meta.total === 1 ? singular : plural}`}
+            </p>
+            <h1 className="display text-5xl sm:text-6xl lg:text-7xl max-w-3xl">{config.heading}</h1>
+          </div>
+          {tab === "projects" && (
+            <button type="button" onClick={() => setShowNewPost(true)} className="btn btn-primary self-start py-3 md:self-auto">
+              <PlusIcon size={18} /> Post an idea
+            </button>
+          )}
+        </div>
+
+        {/* Toolbar */}
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div className="relative flex-1 lg:max-w-md">
+            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-silver-500" />
+            <label htmlFor="search" className="sr-only">{config.searchPlaceholder}</label>
+            <input id="search" type="search" className="field rounded-full pl-11" placeholder={config.searchPlaceholder}
+              value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter">
+            {[{ value: "All", label: "All" }, ...config.filters].map((f) => (
+              <button key={f.value} type="button" aria-pressed={filter === f.value}
+                onClick={() => { setFilter(f.value); setPage(1); }}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  filter === f.value ? "border-silver-100 bg-silver-100 text-ink-950" : "border-ink-700 text-silver-400 hover:border-ink-600 hover:text-silver-100"
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div role="alert" className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-rose/30 bg-rose/10 px-5 py-4 text-sm text-rose">
+            <span>{error}</span>
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="font-semibold underline underline-offset-4">Retry</button>
+          </div>
+        )}
+
+        {/* Grid */}
+        {loading && items.length === 0 ? (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }, (_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : items.length === 0 && !error ? (
+          <div className="card flex flex-col items-center px-6 py-20 text-center">
+            <p className="display mb-3 text-4xl">Nothing here <em className="text-sun">yet.</em></p>
+            <p className="mb-8 max-w-sm text-silver-400">
+              {query || filter !== "All"
+                ? "No matches for that search. Try a different word or filter."
+                : tab === "projects" ? "Be the first: post the idea you keep thinking about." : "No one else has joined yet. Invite a friend!"}
+            </p>
+            {tab === "projects" && !query && filter === "All" && (
+              <button type="button" onClick={() => setShowNewPost(true)} className="btn btn-primary"><PlusIcon size={18} /> Post an idea</button>
+            )}
+          </div>
+        ) : (
+          <div className={`grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 transition-opacity ${loading ? "opacity-50" : ""}`}>
+            {tab === "projects"
+              ? items.map((post, i) => (
+                  <PostCard key={post.id} post={post} index={i} onToggleLike={toggleLike} onOpen={() => setOpenPostId(post.id)} />
+                ))
+              : items.map((peer, i) => <PeerCard key={peer.id} peer={peer} index={i} />)}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {meta.totalPages > 1 && (
+          <nav aria-label="Pagination" className="mt-12 flex items-center justify-center gap-3">
+            <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} className="btn btn-ghost">
+              <ArrowIcon size={16} className="rotate-180" /> Prev
+            </button>
+            <span className="px-3 font-mono text-sm text-silver-400 tabular-nums">{page} / {meta.totalPages}</span>
+            <button type="button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((p) => p + 1)} className="btn btn-ghost">
+              Next <ArrowIcon size={16} />
+            </button>
+          </nav>
+        )}
+      </main>
+
+      <NewPostModal
+        open={showNewPost}
+        onClose={() => setShowNewPost(false)}
+        onCreated={() => {
+          setShowNewPost(false);
+          setSearch("");
+          setFilter("All");
+          setPage(1);
+          setReloadKey((k) => k + 1);
+        }}
+      />
+
+      <PostDrawer
+        post={openPost}
+        user={user}
+        onClose={() => setOpenPostId(null)}
+        onToggleLike={toggleLike}
+        onCommentCountChange={changeCommentCount}
+      />
+
+      <ChatWidget />
     </div>
   );
 }
