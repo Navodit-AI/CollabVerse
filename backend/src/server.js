@@ -6,6 +6,7 @@ import postRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();
 
@@ -21,7 +22,7 @@ app.use(cors({
   credentials: false,
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "200kb" }));
 
 // ✅ Request logger (never log headers — they contain users' Authorization tokens)
 app.use((req, res, next) => {
@@ -45,6 +46,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/likes", likeRoutes);
+app.use("/api/ai", aiRoutes);
 
 // ✅ Start server
 const PORT = process.env.PORT || 8080;
