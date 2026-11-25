@@ -24,7 +24,7 @@ export const createPost = async (req, res) => {
     res.status(201).json(post);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to create post", error: err.message });
+    res.status(500).json({ message: "Failed to create post" });
   }
 };
 
@@ -77,7 +77,7 @@ export const getPosts = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to fetch posts", error: err.message });
+    res.status(500).json({ message: "Failed to fetch posts" });
   }
 };
 
@@ -108,7 +108,7 @@ export const updatePost = async (req, res) => {
     res.json(updated);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to update post", error: err.message });
+    res.status(500).json({ message: "Failed to update post" });
   }
 };
 
@@ -128,6 +128,6 @@ export const deletePost = async (req, res) => {
     res.json({ message: "Post deleted successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to delete post", error: err.message });
+    res.status(500).json({ message: "Failed to delete post" });
   }
 };

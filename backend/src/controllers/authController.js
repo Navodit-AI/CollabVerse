@@ -76,7 +76,7 @@ export const signup = async (req, res) => {
       });
     }
 
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+    res.status(500).json({ message: "Something went wrong on our side. Please try again." });
   }
 };
 
@@ -142,7 +142,7 @@ export const login = async (req, res) => {
       });
     }
 
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+    res.status(500).json({ message: "Something went wrong on our side. Please try again." });
   }
 };
 
