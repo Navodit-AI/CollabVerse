@@ -21,6 +21,7 @@ export default function Signup() {
         return;
       }
       saveSession(data);
+      sessionStorage.setItem("cv-welcome", "1"); // dashboard opens the profile setup once
       router.push("/dashboard");
     } catch (err) {
       setError(err.message);

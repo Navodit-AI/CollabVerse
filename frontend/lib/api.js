@@ -13,14 +13,24 @@ export const getStoredUser = () => {
   }
 };
 
+// "storage" events only fire in *other* tabs, so we also emit our own event for this tab.
+export const USER_CHANGE_EVENT = "cv-user-change";
+const notifyUserChange = () => window.dispatchEvent(new Event(USER_CHANGE_EVENT));
+
+export const saveUser = (user) => {
+  localStorage.setItem("user", JSON.stringify(user));
+  notifyUserChange();
+};
+
 export const saveSession = ({ token, user }) => {
   localStorage.setItem("token", token);
-  localStorage.setItem("user", JSON.stringify(user));
+  saveUser(user);
 };
 
 export const clearSession = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  notifyUserChange();
 };
 
 export class ApiError extends Error {

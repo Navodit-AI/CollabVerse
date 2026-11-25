@@ -61,6 +61,21 @@ export const getUsers = async (req, res) => {
     }
 };
 
+// ✅ GET CURRENT USER (lets the frontend refresh its stored copy)
+export const getMe = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { id: true, name: true, email: true, role: true, skills: true }
+        });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to load profile" });
+    }
+};
+
 // ✅ UPDATE PROFILE
 export const updateProfile = async (req, res) => {
     try {
@@ -78,7 +93,11 @@ export const updateProfile = async (req, res) => {
             if (!Array.isArray(skills) || !skills.every((s) => typeof s === "string")) {
                 return res.status(400).json({ message: "Skills must be an array of strings" });
             }
-            data.skills = [...new Set(skills.map((s) => s.trim()).filter(Boolean))].slice(0, 20);
+            const cleaned = skills.map((s) => s.trim()).filter(Boolean);
+            if (cleaned.some((s) => s.length > 30)) {
+                return res.status(400).json({ message: "Each skill must be 30 characters or less" });
+            }
+            data.skills = [...new Set(cleaned)].slice(0, 20);
         }
 
         const updatedUser = await prisma.user.update({
@@ -89,6 +108,7 @@ export const updateProfile = async (req, res) => {
 
         res.json(updatedUser);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Failed to update profile" });
     }
 };

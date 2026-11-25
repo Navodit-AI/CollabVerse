@@ -1,14 +1,16 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import Avatar from "@/components/Avatar";
 import ChatWidget from "@/components/ChatWidget";
 import NewPostModal from "@/components/NewPostModal";
+import ProfileModal from "@/components/ProfileModal";
 import PostDrawer from "@/components/PostDrawer";
 import PostCard, { CardSkeleton, DOMAINS, PeerCard } from "@/components/PostCard";
 import { ArrowIcon, LogoutIcon, PlusIcon, SearchIcon } from "@/components/Icons";
-import { api, clearSession, getStoredUser, getToken } from "@/lib/api";
+import { api, clearSession, getToken, saveUser } from "@/lib/api";
+import useStoredUser from "@/lib/useStoredUser";
 
 const PAGE_SIZE = 9;
 const ROLES = ["Developer", "Designer", "Manager"];
@@ -43,16 +45,6 @@ function useDebounced(value, ms = 300) {
   return debounced;
 }
 
-// Read the logged-in user from localStorage without a hydration mismatch (server snapshot is null).
-const subscribeStorage = (cb) => {
-  window.addEventListener("storage", cb);
-  return () => window.removeEventListener("storage", cb);
-};
-function useStoredUser() {
-  const raw = useSyncExternalStore(subscribeStorage, () => (getToken() ? localStorage.getItem("user") : null), () => null);
-  return useMemo(() => (raw ? getStoredUser() : null), [raw]);
-}
-
 export default function Dashboard() {
   const router = useRouter();
   const user = useStoredUser();
@@ -73,13 +65,23 @@ export default function Dashboard() {
   const loading = loadedKey !== requestKey;
 
   const [showNewPost, setShowNewPost] = useState(false);
+  // "welcome" right after signup (flag set by the signup page), "edit" from the nav, null when closed
+  const [profileMode, setProfileMode] = useState(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("cv-welcome") ? "welcome" : null
+  );
   const [openPostId, setOpenPostId] = useState(null);
 
   const config = TABS[tab];
 
   // Auth gate
   useEffect(() => {
-    if (!getToken()) router.replace("/login");
+    if (!getToken()) {
+      router.replace("/login");
+      return;
+    }
+    sessionStorage.removeItem("cv-welcome");
+    // Refresh the stored user so role/skills are current (older sessions stored only id/name/email).
+    api("/api/users/me").then(saveUser).catch(() => {});
   }, [router]);
 
   // Fetch the current tab. AbortController drops stale responses when filters change quickly.
@@ -168,10 +170,11 @@ export default function Dashboard() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-2.5 text-sm text-silver-300 md:flex">
+            <button type="button" onClick={() => setProfileMode("edit")} aria-label="Edit your profile"
+              className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-1 text-sm text-silver-300 transition-colors hover:bg-ink-800 hover:text-silver-100 md:pr-3">
               <Avatar name={user.name} size={30} />
-              {user.name}
-            </span>
+              <span className="hidden md:inline">{user.name}</span>
+            </button>
             <button type="button" onClick={logout} className="btn-quiet inline-flex items-center gap-1.5 rounded-full text-sm" aria-label="Log out">
               <LogoutIcon size={16} />
               <span className="hidden sm:inline">Log out</span>
@@ -205,6 +208,16 @@ export default function Dashboard() {
             </button>
           )}
         </div>
+
+        {/* Profile nudge: without skills, nobody can find you and Verse can't match you */}
+        {!user.skills?.length && (
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-sun/30 bg-sun/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between animate-rise">
+            <p className="text-sm text-silver-300">
+              <span className="font-semibold text-silver-100">Add your role and skills</span> so teammates can find you and Verse can match you with projects.
+            </p>
+            <button type="button" onClick={() => setProfileMode("edit")} className="btn btn-primary shrink-0 py-2 text-sm">Complete profile</button>
+          </div>
+        )}
 
         {/* Toolbar */}
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center">
@@ -285,6 +298,15 @@ export default function Dashboard() {
           setPage(1);
           setReloadKey((k) => k + 1);
         }}
+      />
+
+      <ProfileModal
+        key={profileMode ?? "closed"}
+        open={Boolean(profileMode)}
+        welcome={profileMode === "welcome"}
+        user={user}
+        onClose={() => setProfileMode(null)}
+        onSaved={() => tab === "peers" && setReloadKey((k) => k + 1)}
       />
 
       <PostDrawer
