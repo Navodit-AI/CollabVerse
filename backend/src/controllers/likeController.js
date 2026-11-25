@@ -42,7 +42,7 @@ export const toggleLike = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Failed to toggle like", error: err.message });
+        res.status(500).json({ message: "Failed to toggle like" });
     }
 };
 
@@ -64,6 +64,6 @@ export const getLikes = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Failed to fetch likes", error: err.message });
+        res.status(500).json({ message: "Failed to fetch likes" });
     }
 };
