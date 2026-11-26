@@ -20,6 +20,7 @@ model User {
   posts     Post[]   @relation("UserPosts")
   comments  Comment[]
   likes     Like[]
+  joinRequests JoinRequest[]
 }
 
 // Project Idea (Post)
@@ -37,6 +38,7 @@ model Post {
 
   comments    Comment[]
   likes       Like[]
+  joinRequests JoinRequest[]
 }
 
 model Comment {
@@ -62,4 +64,21 @@ model Like {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([authorId, postId])
+}
+
+// "Ask to join" a project. One request per person per project.
+model JoinRequest {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  message   String   @default("")
+  status    String   @default("Pending") // "Pending", "Accepted", "Declined"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+
+  postId    String   @db.ObjectId
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }
