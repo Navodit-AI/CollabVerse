@@ -10,6 +10,10 @@ import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();
 
+// Render runs one proxy in front of the app; trust it so req.ip is the real client IP
+// (rate limits would otherwise treat every user as the same address).
+app.set("trust proxy", 1);
+
 // ✅ CORS: restrict to FRONTEND_URL (comma-separated list allowed) when set; otherwise allow all (dev)
 const allowedOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
