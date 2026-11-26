@@ -14,7 +14,7 @@ const timeAgo = (date) => {
 };
 
 // Full project view: description, skills, like, and the comment thread.
-export default function PostDrawer({ post, user, onClose, onToggleLike, onCommentCountChange }) {
+export default function PostDrawer({ post, user, onClose, onToggleLike, onCommentCountChange, onEdit, onSetStatus, onDelete }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,6 +22,23 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
   const [sending, setSending] = useState(false);
 
   const postId = post?.id;
+  const isOwner = Boolean(post && user && post.author?.id === user.id);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [busy, setBusy] = useState(""); // "status" | "delete" while a request runs
+  const [ownerError, setOwnerError] = useState("");
+
+  const run = async (kind, fn) => {
+    setBusy(kind);
+    setOwnerError("");
+    try {
+      await fn();
+    } catch (err) {
+      setOwnerError(err.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
   useEffect(() => {
     if (!postId) return;
     const controller = new AbortController();
@@ -91,6 +108,36 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
             </span>
             <LikeButton liked={post.likedByMe} count={post._count?.likes ?? 0} onToggle={() => onToggleLike(post)} />
           </div>
+
+          {isOwner && (
+            <div className="mb-6 rounded-2xl border border-line bg-field/60 p-3">
+              {confirmingDelete ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-ink">Delete this project and its comments? This can&rsquo;t be undone.</p>
+                  <div className="flex gap-2">
+                    <button type="button" disabled={busy === "delete"} onClick={() => run("delete", () => onDelete(post))}
+                      className="btn bg-danger px-4 py-2 text-sm text-on-tomato hover:opacity-90">
+                      {busy === "delete" ? "Deleting…" : "Delete"}
+                    </button>
+                    <button type="button" onClick={() => setConfirmingDelete(false)} className="btn btn-ghost px-4 py-2 text-sm">Keep it</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="eyebrow mr-auto pl-1">Your project</span>
+                  <button type="button" onClick={() => onEdit(post)} className="btn btn-ghost px-4 py-2 text-sm">Edit</button>
+                  <button type="button" disabled={busy === "status"}
+                    onClick={() => run("status", () => onSetStatus(post, post.status === "Open" ? "Closed" : "Open"))}
+                    className="btn btn-ghost px-4 py-2 text-sm">
+                    {busy === "status" ? "Saving…" : post.status === "Open" ? "Close project" : "Reopen"}
+                  </button>
+                  <button type="button" onClick={() => setConfirmingDelete(true)}
+                    className="btn px-4 py-2 text-sm text-danger hover:bg-danger/10">Delete</button>
+                </div>
+              )}
+              {ownerError && <p role="alert" className="mt-2 pl-1 text-sm text-danger">{ownerError}</p>}
+            </div>
+          )}
 
           <p className="mb-6 whitespace-pre-line leading-relaxed text-ink-2">{post.description}</p>
 

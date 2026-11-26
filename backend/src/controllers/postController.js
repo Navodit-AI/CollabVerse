@@ -21,10 +21,10 @@ export const createPost = async (req, res) => {
 };
 
 // READ ALL (search, filter, sort, paginate)
-// Query params: page, limit, search, domain, skill, status, sort=newest|oldest
+// Query params: page, limit, search, domain, skill, status, sort=newest|oldest, mine=1 (logged-in user's posts)
 export const getPosts = async (req, res) => {
   try {
-    let { page = 1, limit = 10, search = "", domain, skill, status, sort = "newest" } = req.query;
+    let { page = 1, limit = 10, search = "", domain, skill, status, sort = "newest", mine } = req.query;
     page = Math.max(1, parseInt(page) || 1);
     limit = Math.max(1, Math.min(50, parseInt(limit) || 10));
 
@@ -40,6 +40,10 @@ export const getPosts = async (req, res) => {
     if (domain && domain !== "All") AND.push({ domain: { equals: domain } });
     if (skill) AND.push({ skills: { has: skill } });
     if (status && status !== "All") AND.push({ status: { equals: status } });
+    if (mine === "1") {
+      if (!req.user) return res.status(401).json({ message: "Log in to see your projects" });
+      AND.push({ authorId: req.user.id });
+    }
 
     const where = AND.length ? { AND } : {};
 
@@ -87,7 +91,14 @@ export const updatePost = async (req, res) => {
     if (!existingPost) return res.status(404).json({ message: "Post not found" });
     if (existingPost.authorId !== userId) return res.status(403).json({ message: "Forbidden" });
 
-    const updated = await prisma.post.update({ where: { id }, data });
+    const updated = await prisma.post.update({
+      where: { id },
+      data,
+      include: {
+        author: { select: { id: true, name: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+    });
 
     res.json(updated);
   } catch (err) {

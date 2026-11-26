@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import Avatar from "@/components/Avatar";
 import ChatWidget from "@/components/ChatWidget";
-import NewPostModal from "@/components/NewPostModal";
+import PostFormModal from "@/components/PostFormModal";
 import ProfileModal from "@/components/ProfileModal";
 import PostDrawer from "@/components/PostDrawer";
 import PostCard, { CardSkeleton, DOMAINS, PeerCard } from "@/components/PostCard";
@@ -23,7 +23,7 @@ const TABS = {
     filterParam: "domain",
     filters: DOMAINS.map((d) => ({ value: d.value, label: d.label })),
     searchPlaceholder: "Search projects…",
-    noun: ["open project", "open projects"],
+    noun: ["project", "projects"],
   },
   peers: {
     label: "People",
@@ -54,17 +54,19 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
   const query = useDebounced(search.trim());
+  const [mine, setMine] = useState(false); // projects tab: only my projects
 
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1 });
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   // `loading` is derived: true until the response for the current request has landed.
-  const requestKey = `${tab}|${page}|${query}|${filter}|${reloadKey}`;
+  const requestKey = `${tab}|${page}|${query}|${filter}|${mine}|${reloadKey}`;
   const [loadedKey, setLoadedKey] = useState(null);
   const loading = loadedKey !== requestKey;
 
-  const [showNewPost, setShowNewPost] = useState(false);
+  // null = closed, "new" = create, a post object = edit that post
+  const [postForm, setPostForm] = useState(null);
   // "welcome" right after signup (flag set by the signup page), "edit" from the nav, null when closed
   const [profileMode, setProfileMode] = useState(() =>
     typeof window !== "undefined" && sessionStorage.getItem("cv-welcome") ? "welcome" : null
@@ -91,6 +93,7 @@ export default function Dashboard() {
     const params = new URLSearchParams({ page, limit: PAGE_SIZE });
     if (query) params.set("search", query);
     if (filter !== "All") params.set(config.filterParam, filter);
+    if (tab === "projects" && mine) params.set("mine", "1");
 
     api(`${config.endpoint}?${params}`, { signal: controller.signal })
       .then((data) => {
@@ -101,13 +104,14 @@ export default function Dashboard() {
       .catch((err) => !controller.signal.aborted && setError(err.message))
       .finally(() => !controller.signal.aborted && setLoadedKey(requestKey));
     return () => controller.abort();
-  }, [config, page, query, filter, requestKey]);
+  }, [config, tab, page, query, filter, mine, requestKey]);
 
   const switchTab = (next) => {
     if (next === tab) return;
     setTab(next);
     setSearch("");
     setFilter("All");
+    setMine(false);
     setPage(1);
     setItems([]);
   };
@@ -140,6 +144,24 @@ export default function Dashboard() {
     },
     [updatePost]
   );
+
+  // Server responses for a single post don't know about the viewer's like, so keep ours.
+  const mergePost = useCallback(
+    (saved) => updatePost(saved.id, (p) => ({ ...p, ...saved, likedByMe: p.likedByMe })),
+    [updatePost]
+  );
+
+  const setPostStatus = useCallback(
+    async (post, status) => mergePost(await api(`/api/posts/${post.id}`, { method: "PUT", body: { status } })),
+    [mergePost]
+  );
+
+  const deletePost = useCallback(async (post) => {
+    await api(`/api/posts/${post.id}`, { method: "DELETE" });
+    setOpenPostId(null);
+    setItems((list) => list.filter((p) => p.id !== post.id));
+    setMeta((m) => ({ ...m, total: Math.max(0, m.total - 1) }));
+  }, []);
 
   const changeCommentCount = useCallback(
     (id, delta) => updatePost(id, (p) => ({ ...p, _count: { ...p._count, comments: Math.max(0, (p._count?.comments ?? 0) + delta) } })),
@@ -203,7 +225,7 @@ export default function Dashboard() {
             <h1 className="display text-5xl sm:text-6xl lg:text-7xl max-w-3xl">{config.heading}</h1>
           </div>
           {tab === "projects" && (
-            <button type="button" onClick={() => setShowNewPost(true)} className="btn btn-primary self-start py-3 md:self-auto">
+            <button type="button" onClick={() => setPostForm("new")} className="btn btn-primary self-start py-3 md:self-auto">
               <PlusIcon size={18} /> Post an idea
             </button>
           )}
@@ -237,6 +259,14 @@ export default function Dashboard() {
                 {f.label}
               </button>
             ))}
+            {tab === "projects" && (
+              <button type="button" aria-pressed={mine} onClick={() => { setMine((m) => !m); setPage(1); }}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 sm:ml-2 ${
+                  mine ? "border-tomato bg-tomato text-on-tomato" : "border-line text-muted hover:border-line-strong hover:text-ink"
+                }`}>
+                My projects
+              </button>
+            )}
           </div>
         </div>
 
@@ -256,12 +286,14 @@ export default function Dashboard() {
           <div className="card flex flex-col items-center px-6 py-20 text-center">
             <p className="display mb-3 text-4xl">Nothing here <em className="text-tomato">yet.</em></p>
             <p className="mb-8 max-w-sm text-muted">
-              {query || filter !== "All"
+              {mine && !query && filter === "All"
+                ? "You haven't posted a project yet."
+                : query || filter !== "All" || mine
                 ? "No matches for that search. Try a different word or filter."
                 : tab === "projects" ? "Be the first: post the idea you keep thinking about." : "No one else has joined yet. Invite a friend!"}
             </p>
             {tab === "projects" && !query && filter === "All" && (
-              <button type="button" onClick={() => setShowNewPost(true)} className="btn btn-primary"><PlusIcon size={18} /> Post an idea</button>
+              <button type="button" onClick={() => setPostForm("new")} className="btn btn-primary"><PlusIcon size={18} /> Post an idea</button>
             )}
           </div>
         ) : (
@@ -288,20 +320,30 @@ export default function Dashboard() {
         )}
       </main>
 
-      <NewPostModal
-        open={showNewPost}
-        onClose={() => setShowNewPost(false)}
-        onCreated={() => {
-          setShowNewPost(false);
-          setSearch("");
-          setFilter("All");
-          setPage(1);
-          setReloadKey((k) => k + 1);
+      <PostFormModal
+        key={`post-form-${postForm ? postForm.id ?? "new" : "closed"}`}
+        open={Boolean(postForm)}
+        post={postForm === "new" ? null : postForm}
+        onClose={() => {
+          if (postForm && postForm !== "new") setOpenPostId(postForm.id); // back to the drawer
+          setPostForm(null);
+        }}
+        onSaved={(saved) => {
+          if (postForm !== "new") {
+            mergePost(saved);
+            setOpenPostId(saved.id);
+          } else {
+            setSearch("");
+            setFilter("All");
+            setPage(1);
+            setReloadKey((k) => k + 1);
+          }
+          setPostForm(null);
         }}
       />
 
       <ProfileModal
-        key={profileMode ?? "closed"}
+        key={`profile-${profileMode ?? "closed"}`}
         open={Boolean(profileMode)}
         welcome={profileMode === "welcome"}
         user={user}
@@ -310,11 +352,19 @@ export default function Dashboard() {
       />
 
       <PostDrawer
+        key={`drawer-${openPostId ?? "none"}`}
         post={openPost}
         user={user}
         onClose={() => setOpenPostId(null)}
         onToggleLike={toggleLike}
         onCommentCountChange={changeCommentCount}
+        onEdit={(post) => {
+          // Only one overlay at a time: hide the drawer while editing, reopen it after saving.
+          setOpenPostId(null);
+          setPostForm(post);
+        }}
+        onSetStatus={setPostStatus}
+        onDelete={deletePost}
       />
 
       <ChatWidget />
