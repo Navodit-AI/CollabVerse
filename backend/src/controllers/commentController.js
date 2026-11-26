@@ -1,5 +1,5 @@
 import prisma from "../utils/prisma.js";
-import { isValidObjectId } from "../utils/validate.js";
+import { LIMITS, isValidObjectId } from "../utils/validate.js";
 
 // ADD COMMENT
 export const addComment = async (req, res) => {
@@ -12,6 +12,9 @@ export const addComment = async (req, res) => {
             return res.status(400).json({ message: "Post ID and content are required" });
         }
         if (!isValidObjectId(postId)) return res.status(400).json({ message: "Invalid post ID" });
+        if (content.length > LIMITS.comment) {
+            return res.status(400).json({ message: `Comments must be ${LIMITS.comment} characters or less` });
+        }
 
         // MongoDB doesn't enforce relations, so check the post exists to avoid orphan comments
         const post = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });

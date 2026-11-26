@@ -52,7 +52,7 @@ export default function Signup() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label htmlFor="name" className="label">Name</label>
-          <input id="name" autoComplete="name" required className="field" value={form.name} onChange={set("name")} />
+          <input id="name" autoComplete="name" required maxLength={60} className="field" value={form.name} onChange={set("name")} />
         </div>
         <div>
           <label htmlFor="email" className="label">Email</label>
@@ -60,7 +60,7 @@ export default function Signup() {
         </div>
         <div>
           <label htmlFor="password" className="label">Password</label>
-          <input id="password" type="password" autoComplete="new-password" required minLength={6} className="field"
+          <input id="password" type="password" autoComplete="new-password" required minLength={6} maxLength={128} className="field"
             value={form.password} onChange={set("password")} />
         </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full py-3.5">

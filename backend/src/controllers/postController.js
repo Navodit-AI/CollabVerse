@@ -1,24 +1,16 @@
 import prisma from "../utils/prisma.js";
-import { isValidObjectId } from "../utils/validate.js";
+import { isValidObjectId, validatePostInput } from "../utils/validate.js";
 
 // CREATE
 export const createPost = async (req, res) => {
   try {
-    const { title, description, domain, skills } = req.body;
-    const authorId = req.user.id;
+    const { data, error } = validatePostInput(req.body);
+    if (error) return res.status(400).json({ message: error });
 
-    if (!title || !description || !domain) {
-      return res.status(400).json({ message: "Title, description, and domain are required" });
-    }
-
+    // status always starts as "Open" (schema default), even if the client sends one
+    const { status: _ignored, ...fields } = data;
     const post = await prisma.post.create({
-      data: {
-        title,
-        description,
-        domain,
-        skills: Array.isArray(skills) ? skills.filter(Boolean) : [],
-        authorId,
-      },
+      data: { ...fields, authorId: req.user.id },
     });
 
     res.status(201).json(post);
@@ -87,23 +79,15 @@ export const updatePost = async (req, res) => {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid post ID" });
 
-    const { title, description, domain, skills, status } = req.body;
+    const { data, error } = validatePostInput(req.body, { partial: true });
+    if (error) return res.status(400).json({ message: error });
     const userId = req.user.id;
 
     const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) return res.status(404).json({ message: "Post not found" });
     if (existingPost.authorId !== userId) return res.status(403).json({ message: "Forbidden" });
 
-    const updated = await prisma.post.update({
-      where: { id },
-      data: {
-        title,
-        description,
-        domain,
-        skills: Array.isArray(skills) ? skills.filter(Boolean) : undefined,
-        status,
-      },
-    });
+    const updated = await prisma.post.update({ where: { id }, data });
 
     res.json(updated);
   } catch (err) {
