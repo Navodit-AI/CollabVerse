@@ -6,8 +6,15 @@ import { api } from "@/lib/api";
 
 const EMPTY = { title: "", description: "", domain: "Web", skills: "" };
 
-export default function NewPostModal({ open, onClose, onCreated }) {
-  const [form, setForm] = useState(EMPTY);
+// Create a project, or edit one when `post` is passed. The parent remounts this via `key`,
+// so the form is seeded fresh each time it opens.
+export default function PostFormModal({ open, onClose, onSaved, post = null }) {
+  const editing = Boolean(post);
+  const [form, setForm] = useState(
+    editing
+      ? { title: post.title, description: post.description, domain: post.domain, skills: (post.skills || []).join(", ") }
+      : EMPTY
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -22,8 +29,8 @@ export default function NewPostModal({ open, onClose, onCreated }) {
     }
     setSaving(true);
     try {
-      await api("/api/posts", {
-        method: "POST",
+      const saved = await api(editing ? `/api/posts/${post.id}` : "/api/posts", {
+        method: editing ? "PUT" : "POST",
         body: {
           title: form.title.trim(),
           description: form.description.trim(),
@@ -31,8 +38,7 @@ export default function NewPostModal({ open, onClose, onCreated }) {
           skills: [...new Set(form.skills.split(",").map((s) => s.trim()).filter(Boolean))],
         },
       });
-      setForm(EMPTY);
-      onCreated();
+      onSaved(saved);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,7 +47,7 @@ export default function NewPostModal({ open, onClose, onCreated }) {
   };
 
   return (
-    <Overlay open={open} onClose={onClose} title="Start a project">
+    <Overlay open={open} onClose={onClose} title={editing ? "Edit project" : "Start a project"}>
       <form onSubmit={submit} className="space-y-5">
         <div>
           <label htmlFor="np-title" className="label">Title</label>
@@ -80,14 +86,14 @@ export default function NewPostModal({ open, onClose, onCreated }) {
           <textarea id="np-desc" rows={5} maxLength={3000} className="field resize-y"
             placeholder="The problem, your idea, and who you're looking for."
             value={form.description} onChange={set("description")} />
-          <p className="mt-1.5 text-xs text-faint">Stuck? Ask Verse (bottom right) to help you write this.</p>
+          {!editing && <p className="mt-1.5 text-xs text-faint">Stuck? Ask Verse (bottom right) to help you write this.</p>}
         </div>
 
         {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={saving} className="btn btn-primary flex-1 py-3">
-            {saving ? "Launching…" : "Launch project"}
+            {saving ? (editing ? "Saving…" : "Launching…") : editing ? "Save changes" : "Launch project"}
           </button>
           <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
         </div>
