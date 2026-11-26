@@ -15,7 +15,7 @@ const timeAgo = (date) => {
 };
 
 // Full project view: description, skills, like, and the comment thread.
-export default function PostDrawer({ post, user, onClose, onToggleLike, onCommentCountChange, onEdit, onSetStatus, onDelete }) {
+export default function PostDrawer({ post, user, onClose, onToggleLike, onCommentCountChange, onEdit, onSetStatus, onDelete, onPendingChange }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -152,7 +152,7 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
           )}
 
           <section aria-label="Team and join requests" className="mb-8 border-t border-line pt-6">
-            <JoinSection post={post} />
+            <JoinSection post={post} onPendingChange={(delta) => onPendingChange?.(post.id, delta)} />
           </section>
 
           <section aria-labelledby="comments-heading" className="border-t border-line pt-6">

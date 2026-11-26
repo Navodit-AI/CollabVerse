@@ -51,9 +51,16 @@ export default function PostCard({ post, onToggleLike, onOpen, index = 0 }) {
       style={{ animationDelay: `${index * 50}ms` }}
       className="card group relative flex flex-col p-6 text-left animate-rise transition-[transform,border-color,background-color] duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-1 hover:border-line-strong hover:bg-field/60"
     >
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-2">
         <span className="chip">{domainLabel(post.domain)}</span>
-        <StatusDot status={post.status} />
+        <span className="flex items-center gap-3">
+          {post.pendingRequests > 0 && (
+            <span className="rounded-full bg-tomato px-2.5 py-0.5 text-xs font-semibold text-on-tomato animate-[modal-in_0.35s_var(--ease-spring)_both]">
+              {post.pendingRequests} {post.pendingRequests === 1 ? "request" : "requests"}
+            </span>
+          )}
+          <StatusDot status={post.status} />
+        </span>
       </div>
 
       <h3 className="text-xl font-semibold leading-snug mb-2 group-hover:text-tomato transition-colors">

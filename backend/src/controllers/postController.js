@@ -65,7 +65,23 @@ export const getPosts = async (req, res) => {
       prisma.post.count({ where }),
     ]);
 
-    const posts = rawPosts.map(({ likes, ...post }) => ({ ...post, likedByMe: Boolean(likes?.length) }));
+    // Pending join requests, counted only for the viewer's own posts on this page (others' stay private).
+    const ownIds = userId ? rawPosts.filter((p) => p.authorId === userId).map((p) => p.id) : [];
+    const pendingByPost = new Map();
+    if (ownIds.length) {
+      const groups = await prisma.joinRequest.groupBy({
+        by: ["postId"],
+        where: { postId: { in: ownIds }, status: "Pending" },
+        _count: { _all: true },
+      });
+      for (const g of groups) pendingByPost.set(g.postId, g._count._all);
+    }
+
+    const posts = rawPosts.map(({ likes, ...post }) => ({
+      ...post,
+      likedByMe: Boolean(likes?.length),
+      ...(post.authorId === userId && { pendingRequests: pendingByPost.get(post.id) ?? 0 }),
+    }));
 
     res.json({
       data: posts,
