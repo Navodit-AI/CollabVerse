@@ -1,4 +1,5 @@
 import prisma from "../utils/prisma.js";
+import { cleanSkills } from "../utils/validate.js";
 
 const ALLOWED_ROLES = ["User", "Developer", "Designer", "Manager"];
 
@@ -90,14 +91,9 @@ export const updateProfile = async (req, res) => {
             data.role = role;
         }
         if (skills !== undefined) {
-            if (!Array.isArray(skills) || !skills.every((s) => typeof s === "string")) {
-                return res.status(400).json({ message: "Skills must be an array of strings" });
-            }
-            const cleaned = skills.map((s) => s.trim()).filter(Boolean);
-            if (cleaned.some((s) => s.length > 30)) {
-                return res.status(400).json({ message: "Each skill must be 30 characters or less" });
-            }
-            data.skills = [...new Set(cleaned)].slice(0, 20);
+            const { skills: cleaned, error } = cleanSkills(skills);
+            if (error) return res.status(400).json({ message: error });
+            data.skills = cleaned;
         }
 
         const updatedUser = await prisma.user.update({

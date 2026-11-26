@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/prisma.js";
+import { LIMITS } from "../utils/validate.js";
 
 // Helper to validate email format
 const isValidEmail = (email) => {
@@ -11,18 +12,25 @@ const isValidEmail = (email) => {
 export const signup = async (req, res) => {
   console.log("✅ SIGNUP endpoint hit");
   try {
-    const { name, email, password } = req.body;
+    const { email, password } = req.body;
+    const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
     console.log("Incoming data:", { name, email, password: password ? "***" : undefined });
 
     // --- Validation ---
-    if (!name || !email || !password) {
+    if (!name || typeof email !== "string" || typeof password !== "string" || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+    if (name.length > LIMITS.name) {
+      return res.status(400).json({ message: `Name must be ${LIMITS.name} characters or less` });
     }
     if (!isValidEmail(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    if (password.length < LIMITS.passwordMin) {
+      return res.status(400).json({ message: `Password must be at least ${LIMITS.passwordMin} characters long` });
+    }
+    if (password.length > LIMITS.passwordMax) {
+      return res.status(400).json({ message: `Password must be ${LIMITS.passwordMax} characters or less` });
     }
 
     // --- 1. Check if user exists ---
@@ -87,7 +95,7 @@ export const login = async (req, res) => {
     console.log("Incoming login data:", { email, hasPassword: !!password });
 
     // --- Validation ---
-    if (!email || !password) {
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
