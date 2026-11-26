@@ -1,5 +1,5 @@
 // Initial-based avatar. Hue is derived from the name so each person keeps a consistent colour.
-const HUES = ["#ffc93c", "#c3c7cc", "#6fdc8c", "#8ab4ff", "#ff9e7a", "#c9a7ff"];
+const HUES = ["#dce4d2", "#f6d5c9", "#e9e1c8", "#d4e0e6", "#e6d6e4", "#c9d8bd"];
 
 export default function Avatar({ name, size = 36 }) {
   const clean = (name || "").trim();
@@ -9,7 +9,7 @@ export default function Avatar({ name, size = 36 }) {
   return (
     <span
       aria-hidden="true"
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-on-sun"
+      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-ink"
       style={{ width: size, height: size, background: hue, fontSize: size * 0.42 }}
     >
       {initial}

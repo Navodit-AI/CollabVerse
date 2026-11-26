@@ -4,9 +4,8 @@ import Link from "next/link";
 export function LogoMark({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="12" cy="16" r="9" fill="none" stroke="var(--color-silver-100)" strokeWidth="2.5" />
-      <circle cx="20" cy="16" r="9" fill="var(--color-sun)" fillOpacity="0.9" />
-      <circle cx="12" cy="16" r="9" fill="none" stroke="var(--color-ink-950)" strokeWidth="2.5" strokeDasharray="0" opacity="0.35" />
+      <circle cx="12" cy="16" r="9" fill="var(--color-sage)" />
+      <circle cx="20" cy="16" r="9" fill="var(--color-tomato)" />
     </svg>
   );
 }

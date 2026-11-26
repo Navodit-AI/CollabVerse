@@ -60,8 +60,8 @@ export default function NewPostModal({ open, onClose, onCreated }) {
                 onClick={() => setForm({ ...form, domain: d.value })}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
                   form.domain === d.value
-                    ? "border-silver-100 bg-silver-100 text-ink-950"
-                    : "border-ink-600 text-silver-300 hover:border-silver-400"
+                    ? "border-ink bg-ink text-paper"
+                    : "border-line-strong text-ink-2 hover:border-muted"
                 }`}
               >
                 {d.label}
@@ -71,7 +71,7 @@ export default function NewPostModal({ open, onClose, onCreated }) {
         </fieldset>
 
         <div>
-          <label htmlFor="np-skills" className="label">Skills you need <span className="text-silver-500">(comma separated)</span></label>
+          <label htmlFor="np-skills" className="label">Skills you need <span className="text-faint">(comma separated)</span></label>
           <input id="np-skills" className="field" placeholder="React, Figma, Python" value={form.skills} onChange={set("skills")} />
         </div>
 
@@ -80,10 +80,10 @@ export default function NewPostModal({ open, onClose, onCreated }) {
           <textarea id="np-desc" rows={5} maxLength={3000} className="field resize-y"
             placeholder="The problem, your idea, and who you're looking for."
             value={form.description} onChange={set("description")} />
-          <p className="mt-1.5 text-xs text-silver-500">Stuck? Ask Verse (bottom right) to help you write this.</p>
+          <p className="mt-1.5 text-xs text-faint">Stuck? Ask Verse (bottom right) to help you write this.</p>
         </div>
 
-        {error && <p role="alert" className="text-sm text-rose">{error}</p>}
+        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={saving} className="btn btn-primary flex-1 py-3">

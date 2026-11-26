@@ -21,6 +21,7 @@ export default function Signup() {
         return;
       }
       saveSession(data);
+      sessionStorage.setItem("cv-welcome", "1"); // dashboard opens the profile setup once
       router.push("/dashboard");
     } catch (err) {
       setError(err.message);
@@ -38,9 +39,9 @@ export default function Signup() {
       aside={
         <div className="max-w-lg">
           <p className="display text-6xl xl:text-7xl mb-8">
-            Stop building <em className="text-sun">alone.</em>
+            Stop building <em className="text-tomato">alone.</em>
           </p>
-          <ul className="space-y-3 text-silver-300">
+          <ul className="space-y-3 text-ink-2">
             <li>01 · Post the idea you keep thinking about</li>
             <li>02 · Match with designers, devs and PMs</li>
             <li>03 · Plan it with Verse, your AI co-pilot</li>

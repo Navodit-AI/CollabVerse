@@ -1,14 +1,16 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import Avatar from "@/components/Avatar";
 import ChatWidget from "@/components/ChatWidget";
 import NewPostModal from "@/components/NewPostModal";
+import ProfileModal from "@/components/ProfileModal";
 import PostDrawer from "@/components/PostDrawer";
 import PostCard, { CardSkeleton, DOMAINS, PeerCard } from "@/components/PostCard";
 import { ArrowIcon, LogoutIcon, PlusIcon, SearchIcon } from "@/components/Icons";
-import { api, clearSession, getStoredUser, getToken } from "@/lib/api";
+import { api, clearSession, getToken, saveUser } from "@/lib/api";
+import useStoredUser from "@/lib/useStoredUser";
 
 const PAGE_SIZE = 9;
 const ROLES = ["Developer", "Designer", "Manager"];
@@ -16,7 +18,7 @@ const ROLES = ["Developer", "Designer", "Manager"];
 const TABS = {
   projects: {
     label: "Projects",
-    heading: <>Find a project worth <em className="text-sun">building.</em></>,
+    heading: <>Find a project worth <em className="text-tomato">building.</em></>,
     endpoint: "/api/posts",
     filterParam: "domain",
     filters: DOMAINS.map((d) => ({ value: d.value, label: d.label })),
@@ -25,7 +27,7 @@ const TABS = {
   },
   peers: {
     label: "People",
-    heading: <>Find your <em className="text-sun">people.</em></>,
+    heading: <>Find your <em className="text-tomato">people.</em></>,
     endpoint: "/api/users",
     filterParam: "role",
     filters: ROLES.map((r) => ({ value: r, label: `${r}s` })),
@@ -41,16 +43,6 @@ function useDebounced(value, ms = 300) {
     return () => clearTimeout(t);
   }, [value, ms]);
   return debounced;
-}
-
-// Read the logged-in user from localStorage without a hydration mismatch (server snapshot is null).
-const subscribeStorage = (cb) => {
-  window.addEventListener("storage", cb);
-  return () => window.removeEventListener("storage", cb);
-};
-function useStoredUser() {
-  const raw = useSyncExternalStore(subscribeStorage, () => (getToken() ? localStorage.getItem("user") : null), () => null);
-  return useMemo(() => (raw ? getStoredUser() : null), [raw]);
 }
 
 export default function Dashboard() {
@@ -73,13 +65,23 @@ export default function Dashboard() {
   const loading = loadedKey !== requestKey;
 
   const [showNewPost, setShowNewPost] = useState(false);
+  // "welcome" right after signup (flag set by the signup page), "edit" from the nav, null when closed
+  const [profileMode, setProfileMode] = useState(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("cv-welcome") ? "welcome" : null
+  );
   const [openPostId, setOpenPostId] = useState(null);
 
   const config = TABS[tab];
 
   // Auth gate
   useEffect(() => {
-    if (!getToken()) router.replace("/login");
+    if (!getToken()) {
+      router.replace("/login");
+      return;
+    }
+    sessionStorage.removeItem("cv-welcome");
+    // Refresh the stored user so role/skills are current (older sessions stored only id/name/email).
+    api("/api/users/me").then(saveUser).catch(() => {});
   }, [router]);
 
   // Fetch the current tab. AbortController drops stale responses when filters change quickly.
@@ -152,15 +154,15 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       {/* Nav */}
-      <header className="sticky top-0 z-30 border-b border-ink-700/70 bg-ink-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-line/70 bg-paper/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
           <Logo href="/dashboard" />
 
-          <nav aria-label="Sections" className="hidden sm:flex rounded-full border border-ink-700 bg-ink-900 p-1">
+          <nav aria-label="Sections" className="hidden sm:flex rounded-full border border-line bg-card p-1">
             {Object.entries(TABS).map(([key, t]) => (
               <button key={key} type="button" onClick={() => switchTab(key)} aria-current={tab === key ? "page" : undefined}
                 className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all duration-300 ${
-                  tab === key ? "bg-silver-100 text-ink-950" : "text-silver-400 hover:text-silver-100"
+                  tab === key ? "bg-ink text-paper" : "text-muted hover:text-ink"
                 }`}>
                 {t.label}
               </button>
@@ -168,10 +170,11 @@ export default function Dashboard() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-2.5 text-sm text-silver-300 md:flex">
+            <button type="button" onClick={() => setProfileMode("edit")} aria-label="Edit your profile"
+              className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-1 text-sm text-ink-2 transition-colors hover:bg-field hover:text-ink md:pr-3">
               <Avatar name={user.name} size={30} />
-              {user.name}
-            </span>
+              <span className="hidden md:inline">{user.name}</span>
+            </button>
             <button type="button" onClick={logout} className="btn-quiet inline-flex items-center gap-1.5 rounded-full text-sm" aria-label="Log out">
               <LogoutIcon size={16} />
               <span className="hidden sm:inline">Log out</span>
@@ -180,10 +183,10 @@ export default function Dashboard() {
         </div>
 
         {/* Mobile tabs */}
-        <nav aria-label="Sections" className="flex border-t border-ink-700/70 sm:hidden">
+        <nav aria-label="Sections" className="flex border-t border-line/70 sm:hidden">
           {Object.entries(TABS).map(([key, t]) => (
             <button key={key} type="button" onClick={() => switchTab(key)} aria-current={tab === key ? "page" : undefined}
-              className={`flex-1 py-2.5 text-sm font-medium ${tab === key ? "text-silver-100 shadow-[inset_0_-2px_0_var(--color-sun)]" : "text-silver-500"}`}>
+              className={`flex-1 py-2.5 text-sm font-medium ${tab === key ? "text-ink shadow-[inset_0_-2px_0_var(--color-tomato)]" : "text-faint"}`}>
               {t.label}
             </button>
           ))}
@@ -206,10 +209,20 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Profile nudge: without skills, nobody can find you and Verse can't match you */}
+        {!user.skills?.length && (
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-sage bg-sage-soft/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between animate-rise">
+            <p className="text-sm text-ink-2">
+              <span className="font-semibold text-ink">Add your role and skills</span> so teammates can find you and Verse can match you with projects.
+            </p>
+            <button type="button" onClick={() => setProfileMode("edit")} className="btn btn-primary shrink-0 py-2 text-sm">Complete profile</button>
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative flex-1 lg:max-w-md">
-            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-silver-500" />
+            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-faint" />
             <label htmlFor="search" className="sr-only">{config.searchPlaceholder}</label>
             <input id="search" type="search" className="field rounded-full pl-11" placeholder={config.searchPlaceholder}
               value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
@@ -219,7 +232,7 @@ export default function Dashboard() {
               <button key={f.value} type="button" aria-pressed={filter === f.value}
                 onClick={() => { setFilter(f.value); setPage(1); }}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                  filter === f.value ? "border-silver-100 bg-silver-100 text-ink-950" : "border-ink-700 text-silver-400 hover:border-ink-600 hover:text-silver-100"
+                  filter === f.value ? "border-ink bg-ink text-paper" : "border-line text-muted hover:border-line-strong hover:text-ink"
                 }`}>
                 {f.label}
               </button>
@@ -228,7 +241,7 @@ export default function Dashboard() {
         </div>
 
         {error && (
-          <div role="alert" className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-rose/30 bg-rose/10 px-5 py-4 text-sm text-rose">
+          <div role="alert" className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-danger/30 bg-danger/10 px-5 py-4 text-sm text-danger">
             <span>{error}</span>
             <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="font-semibold underline underline-offset-4">Retry</button>
           </div>
@@ -241,8 +254,8 @@ export default function Dashboard() {
           </div>
         ) : items.length === 0 && !error ? (
           <div className="card flex flex-col items-center px-6 py-20 text-center">
-            <p className="display mb-3 text-4xl">Nothing here <em className="text-sun">yet.</em></p>
-            <p className="mb-8 max-w-sm text-silver-400">
+            <p className="display mb-3 text-4xl">Nothing here <em className="text-tomato">yet.</em></p>
+            <p className="mb-8 max-w-sm text-muted">
               {query || filter !== "All"
                 ? "No matches for that search. Try a different word or filter."
                 : tab === "projects" ? "Be the first: post the idea you keep thinking about." : "No one else has joined yet. Invite a friend!"}
@@ -267,7 +280,7 @@ export default function Dashboard() {
             <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} className="btn btn-ghost">
               <ArrowIcon size={16} className="rotate-180" /> Prev
             </button>
-            <span className="px-3 font-mono text-sm text-silver-400 tabular-nums">{page} / {meta.totalPages}</span>
+            <span className="px-3 font-mono text-sm text-muted tabular-nums">{page} / {meta.totalPages}</span>
             <button type="button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((p) => p + 1)} className="btn btn-ghost">
               Next <ArrowIcon size={16} />
             </button>
@@ -285,6 +298,15 @@ export default function Dashboard() {
           setPage(1);
           setReloadKey((k) => k + 1);
         }}
+      />
+
+      <ProfileModal
+        key={profileMode ?? "closed"}
+        open={Boolean(profileMode)}
+        welcome={profileMode === "welcome"}
+        user={user}
+        onClose={() => setProfileMode(null)}
+        onSaved={() => tab === "peers" && setReloadKey((k) => k + 1)}
       />
 
       <PostDrawer

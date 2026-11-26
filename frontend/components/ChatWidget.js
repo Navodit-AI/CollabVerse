@@ -22,8 +22,8 @@ function renderInline(text, keyPrefix) {
     if (m.index > last) parts.push(text.slice(last, m.index));
     const tok = m[0];
     const key = `${keyPrefix}-${m.index}`;
-    if (tok.startsWith("**")) parts.push(<strong key={key} className="font-semibold text-silver-100">{tok.slice(2, -2)}</strong>);
-    else if (tok.startsWith("`")) parts.push(<code key={key} className="rounded bg-ink-700 px-1 py-0.5 font-mono text-[0.85em]">{tok.slice(1, -1)}</code>);
+    if (tok.startsWith("**")) parts.push(<strong key={key} className="font-semibold text-ink">{tok.slice(2, -2)}</strong>);
+    else if (tok.startsWith("`")) parts.push(<code key={key} className="rounded bg-line px-1 py-0.5 font-mono text-[0.85em]">{tok.slice(1, -1)}</code>);
     else parts.push(<em key={key}>{tok.slice(1, -1)}</em>);
     last = m.index + tok.length;
   }
@@ -56,12 +56,12 @@ function Markdown({ text }) {
     if (b.type === "ul" || b.type === "ol") {
       const Tag = b.type;
       return (
-        <Tag key={i} className={`my-2 space-y-1 pl-5 ${b.type === "ul" ? "list-disc" : "list-decimal"} marker:text-silver-500`}>
+        <Tag key={i} className={`my-2 space-y-1 pl-5 ${b.type === "ul" ? "list-disc" : "list-decimal"} marker:text-faint`}>
           {b.items.map((item, j) => <li key={j}>{item}</li>)}
         </Tag>
       );
     }
-    if (b.type === "h") return <p key={i} className="mt-3 mb-1 font-semibold text-silver-100">{b.content}</p>;
+    if (b.type === "h") return <p key={i} className="mt-3 mb-1 font-semibold text-ink">{b.content}</p>;
     return <p key={i} className="my-1.5">{b.content}</p>;
   });
 }
@@ -158,7 +158,7 @@ export default function ChatWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls="verse-panel"
-        className={`btn btn-primary fixed bottom-6 right-6 z-40 py-3.5 pl-4 pr-5 shadow-[0_12px_40px_-12px_rgb(255_201_60/0.7)] ${open ? "scale-0 opacity-0" : ""}`}
+        className={`btn btn-primary fixed bottom-6 right-6 z-40 py-3.5 pl-4 pr-5 shadow-[0_12px_32px_-12px_rgb(214_61_39/0.6)] ${open ? "scale-0 opacity-0" : ""}`}
       >
         <SparkIcon size={18} />
         Ask Verse
@@ -168,21 +168,21 @@ export default function ChatWidget() {
         <section
           id="verse-panel"
           aria-label="Verse AI assistant"
-          className="fixed inset-x-3 bottom-3 z-50 flex h-[min(640px,calc(100dvh-1.5rem))] flex-col overflow-hidden rounded-3xl border border-ink-700 bg-ink-900 shadow-2xl sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] origin-bottom-right animate-[modal-in_0.35s_var(--ease-spring)_both]"
+          className="fixed inset-x-3 bottom-3 z-50 flex h-[min(640px,calc(100dvh-1.5rem))] flex-col overflow-hidden rounded-3xl border border-line bg-card shadow-2xl sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] origin-bottom-right animate-[modal-in_0.35s_var(--ease-spring)_both]"
         >
-          <header className="flex items-center justify-between border-b border-ink-700 px-5 py-4">
+          <header className="flex items-center justify-between border-b border-line px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sun text-on-sun"><SparkIcon size={18} /></span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-tomato text-on-tomato"><SparkIcon size={18} /></span>
               <div>
                 <p className="font-semibold leading-tight">Verse</p>
-                <p className="text-xs text-silver-500">Your AI co-pilot</p>
+                <p className="text-xs text-faint">Your AI co-pilot</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
                 <button type="button" onClick={reset} className="btn-quiet whitespace-nowrap rounded-full text-xs">New chat</button>
               )}
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-full p-2 text-silver-400 hover:bg-ink-800 hover:text-silver-100">
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-full p-2 text-muted hover:bg-field hover:text-ink">
                 <CloseIcon />
               </button>
             </div>
@@ -191,12 +191,12 @@ export default function ChatWidget() {
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5" aria-live="polite">
             {messages.length === 0 ? (
               <div className="flex h-full flex-col justify-end">
-                <p className="display mb-2 text-4xl">What are we <em className="text-sun">building?</em></p>
-                <p className="mb-6 text-sm text-silver-400">Ask me to find projects, shape your idea, or plan the work.</p>
+                <p className="display mb-2 text-4xl">What are we <em className="text-tomato">building?</em></p>
+                <p className="mb-6 text-sm text-muted">Ask me to find projects, shape your idea, or plan the work.</p>
                 <div className="flex flex-col items-start gap-2">
                   {SUGGESTIONS.map((s) => (
                     <button key={s} type="button" onClick={() => send(s)}
-                      className="rounded-2xl border border-ink-700 px-3.5 py-2 text-left text-sm text-silver-300 transition-colors hover:border-sun/60 hover:text-silver-100">
+                      className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm text-ink-2 transition-colors hover:border-tomato/60 hover:text-ink">
                       {s}
                     </button>
                   ))}
@@ -206,17 +206,17 @@ export default function ChatWidget() {
               <ul className="space-y-4">
                 {messages.map((m, i) =>
                   m.role === "user" ? (
-                    <li key={i} className="ml-10 w-fit max-w-[85%] self-end rounded-2xl rounded-br-md bg-silver-100 px-4 py-2.5 text-sm text-ink-950 whitespace-pre-wrap break-words ml-auto">
+                    <li key={i} className="ml-10 w-fit max-w-[85%] self-end rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-sm text-paper whitespace-pre-wrap break-words ml-auto">
                       {m.content}
                     </li>
                   ) : (
-                    <li key={i} className="mr-6 text-sm leading-relaxed text-silver-300 break-words">
+                    <li key={i} className="mr-6 text-sm leading-relaxed text-ink-2 break-words">
                       {m.content ? (
                         <Markdown text={m.content} />
                       ) : (
                         <span className="inline-flex gap-1 py-2" aria-label="Verse is thinking">
                           {[0, 1, 2].map((d) => (
-                            <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-sun" style={{ animationDelay: `${d * 120}ms` }} />
+                            <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-tomato" style={{ animationDelay: `${d * 120}ms` }} />
                           ))}
                         </span>
                       )}
@@ -227,9 +227,9 @@ export default function ChatWidget() {
             )}
           </div>
 
-          {error && <p role="alert" className="mx-5 mb-2 rounded-xl bg-rose/10 px-3 py-2 text-xs text-rose">{error}</p>}
+          {error && <p role="alert" className="mx-5 mb-2 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger">{error}</p>}
 
-          <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2 border-t border-ink-700 p-3">
+          <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2 border-t border-line p-3">
             <label htmlFor="verse-input" className="sr-only">Message Verse</label>
             <textarea
               id="verse-input"
@@ -237,7 +237,7 @@ export default function ChatWidget() {
               rows={1}
               maxLength={4000}
               placeholder="Ask anything…"
-              className="field max-h-32 min-h-[46px] resize-none border-transparent bg-ink-800"
+              className="field max-h-32 min-h-[46px] resize-none border-transparent bg-field"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -249,7 +249,7 @@ export default function ChatWidget() {
             />
             {streaming ? (
               <button type="button" onClick={stop} aria-label="Stop generating" className="btn btn-ghost h-[46px] w-[46px] shrink-0 p-0">
-                <span className="h-3 w-3 rounded-sm bg-silver-100" />
+                <span className="h-3 w-3 rounded-sm bg-ink" />
               </button>
             ) : (
               <button type="submit" disabled={!input.trim()} aria-label="Send" className="btn btn-primary h-[46px] w-[46px] shrink-0 p-0">

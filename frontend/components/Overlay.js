@@ -32,7 +32,7 @@ export default function Overlay({ open, onClose, title, variant = "modal", child
   const drawer = variant === "drawer";
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-ink-950/75 backdrop-blur-sm animate-[fade-in_0.2s_ease-out_both]" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm animate-[fade-in_0.2s_ease-out_both]" onClick={onClose} />
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -41,13 +41,13 @@ export default function Overlay({ open, onClose, title, variant = "modal", child
         aria-label={typeof title === "string" ? title : undefined}
         className={
           drawer
-            ? "absolute inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-ink-700 bg-ink-900 shadow-2xl outline-none animate-[slide-in_0.45s_var(--ease-out-expo)_both]"
-            : "absolute left-1/2 top-1/2 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-3xl border border-ink-700 bg-ink-900 shadow-2xl outline-none animate-[modal-in_0.4s_var(--ease-spring)_both]"
+            ? "absolute inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-line bg-card shadow-2xl outline-none animate-[slide-in_0.45s_var(--ease-out-expo)_both]"
+            : "absolute left-1/2 top-1/2 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-3xl border border-line bg-card shadow-2xl outline-none animate-[modal-in_0.4s_var(--ease-spring)_both]"
         }
       >
         <div className="flex items-start justify-between gap-4 px-7 pt-7 pb-4">
           <div className="min-w-0 flex-1">{typeof title === "string" ? <h2 className="display text-4xl">{title}</h2> : title}</div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-silver-400 hover:bg-ink-800 hover:text-silver-100">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-muted hover:bg-field hover:text-ink">
             <CloseIcon />
           </button>
         </div>
