@@ -19,6 +19,8 @@ You help users:
 - plan a project: scope, milestones, roles, and a sensible tech stack
 - write a friendly message to invite a collaborator
 
+Each project lists its current team. Use it to spot gaps: compare the skills a project needs with the roles already on its team, and point the user to projects where their skills fill a gap. Don't suggest projects the user owns or has already asked to join; mention the status of their requests if it's relevant.
+
 Keep answers short and practical, and use markdown lists when helpful. When you mention a project from the platform, use its exact title. You only know the platform data included below; if something isn't there, say so instead of guessing.`;
 
 // Simple in-memory limiter: enough for a single instance, resets on restart.
@@ -47,14 +49,23 @@ const validateMessages = (messages) => {
 };
 
 // A snapshot of the platform so answers about "projects on CollabVerse" are grounded in real data.
-const buildPlatformContext = async (userId) => {
-  const [me, posts, peers] = await Promise.all([
+// Exported for tests.
+export const buildPlatformContext = async (userId) => {
+  const [me, posts, peers, myRequests] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { name: true, role: true, skills: true } }),
     prisma.post.findMany({
       where: { status: "Open" },
       orderBy: { createdAt: "desc" },
       take: 25,
-      select: { title: true, description: true, domain: true, skills: true, author: { select: { name: true } } },
+      select: {
+        title: true,
+        description: true,
+        domain: true,
+        skills: true,
+        authorId: true,
+        author: { select: { name: true, role: true } },
+        joinRequests: { where: { status: "Accepted" }, select: { user: { select: { name: true, role: true } } } },
+      },
     }),
     prisma.user.findMany({
       where: { id: { not: userId } },
@@ -62,17 +73,29 @@ const buildPlatformContext = async (userId) => {
       take: 25,
       select: { name: true, role: true, skills: true },
     }),
+    prisma.joinRequest.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      select: { status: true, post: { select: { title: true } } },
+    }),
   ]);
 
-  const projectLines = posts.map(
-    (p) => `- "${p.title}" [${p.domain}] by ${p.author?.name ?? "Unknown"}; needs: ${p.skills.join(", ") || "n/a"}; ${p.description.slice(0, 200)}`
-  );
+  const person = (u, extra = "") => `${u?.name ?? "Unknown"} (${[u?.role && u.role !== "User" ? u.role : null, extra].filter(Boolean).join(", ") || "member"})`;
+
+  const projectLines = posts.map((p) => {
+    const team = [person(p.author, "owner"), ...(p.joinRequests ?? []).map((r) => person(r.user))].join(", ");
+    const mine = p.authorId === userId ? " (the current user's project)" : "";
+    return `- "${p.title}"${mine} [${p.domain}]; needs: ${p.skills.join(", ") || "n/a"}; team: ${team}; ${p.description.slice(0, 200)}`;
+  });
+  const requestLines = myRequests.map((r) => `- "${r.post?.title ?? "Deleted project"}": ${r.status}`);
   const peerLines = peers.map((u) => `- ${u.name} (${u.role}); skills: ${u.skills.join(", ") || "n/a"}`);
 
   return [
     `Current user: ${me?.name ?? "Unknown"} (${me?.role ?? "User"}); skills: ${me?.skills?.join(", ") || "none listed"}`,
     `Open projects (newest first):\n${projectLines.join("\n") || "(none yet)"}`,
     `People on the platform:\n${peerLines.join("\n") || "(none yet)"}`,
+    `The current user's join requests:\n${requestLines.join("\n") || "(none)"}`,
   ].join("\n\n");
 };
 
