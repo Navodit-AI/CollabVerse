@@ -1,13 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://127.0.0.1:8080/api/:path*', // Proxy to Backend
-      },
-    ]
-  },
-};
+// The app calls the backend directly via NEXT_PUBLIC_API_URL, so no rewrites are needed.
+const nextConfig = {};
 
 export default nextConfig;

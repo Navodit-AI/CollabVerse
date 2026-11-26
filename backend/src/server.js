@@ -40,10 +40,6 @@ app.get("/", (req, res) => {
   res.send("✅ Server is alive!");
 });
 
-app.get("/api/posts/test", (req, res) => {
-  res.send("Posts route works!");
-});
-
 // ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);

@@ -14,7 +14,6 @@ export const signup = async (req, res) => {
   try {
     const { email, password } = req.body;
     const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
-    console.log("Incoming data:", { name, email, password: password ? "***" : undefined });
 
     // --- Validation ---
     if (!name || typeof email !== "string" || typeof password !== "string" || !email || !password) {
@@ -49,7 +48,6 @@ export const signup = async (req, res) => {
     }
 
     if (existingUser) {
-      console.log("User already exists:", email);
       return res.status(409).json({ message: "User already exists with this email" });
     }
 
@@ -92,7 +90,6 @@ export const login = async (req, res) => {
   console.log("✅ LOGIN endpoint hit");
   try {
     const { email, password } = req.body;
-    console.log("Incoming login data:", { email, hasPassword: !!password });
 
     // --- Validation ---
     if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
@@ -115,7 +112,6 @@ export const login = async (req, res) => {
     }
 
     if (!user) {
-      console.log("User not found:", email);
       // Return 401 or 404. 400/401 is often better for security (not gathering emails), but 404 is clear for dev.
       // Let's stick to helpful but safe.
       // Same response as a wrong password so the endpoint can't be used to probe which emails exist
@@ -125,13 +121,12 @@ export const login = async (req, res) => {
     // --- 2. Verify password ---
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      console.log("Invalid password for user:", email);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // --- 3. Generate JWT token ---
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    console.log("✅ Login successful for user:", email);
+    console.log("✅ Login successful for user:", user.id);
 
     // --- 4. Send success response ---
     res.status(200).json({
