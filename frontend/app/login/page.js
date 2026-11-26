@@ -32,7 +32,7 @@ export default function Login() {
       footer={<>New here? <AuthLink href="/signup">Create an account</AuthLink></>}
       aside={
         <p className="display text-6xl xl:text-7xl max-w-lg">
-          Good ideas are <em className="text-sun">better</em> with company.
+          Good ideas are <em className="text-tomato">better</em> with company.
         </p>
       }
     >
@@ -50,7 +50,7 @@ export default function Login() {
         <button type="submit" disabled={loading} className="btn btn-primary w-full py-3.5">
           {loading ? "Logging in…" : "Log in"}
         </button>
-        {loading && <p className="text-xs text-silver-500 text-center">First login of the day can take up to a minute while the server wakes up.</p>}
+        {loading && <p className="text-xs text-faint text-center">First login of the day can take up to a minute while the server wakes up.</p>}
       </form>
       <AuthError>{error}</AuthError>
     </AuthShell>

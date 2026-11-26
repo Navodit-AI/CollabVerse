@@ -85,14 +85,14 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
       {post && (
         <>
           <div className="mb-6 flex items-center justify-between">
-            <span className="flex items-center gap-2.5 text-sm text-silver-300">
+            <span className="flex items-center gap-2.5 text-sm text-ink-2">
               <Avatar name={post.author?.name} size={30} />
               {post.author?.name ?? "Unknown"}
             </span>
             <LikeButton liked={post.likedByMe} count={post._count?.likes ?? 0} onToggle={() => onToggleLike(post)} />
           </div>
 
-          <p className="mb-6 whitespace-pre-line leading-relaxed text-silver-300">{post.description}</p>
+          <p className="mb-6 whitespace-pre-line leading-relaxed text-ink-2">{post.description}</p>
 
           {post.skills?.length > 0 && (
             <div className="mb-10">
@@ -103,15 +103,15 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
             </div>
           )}
 
-          <section aria-labelledby="comments-heading" className="border-t border-ink-700 pt-6">
+          <section aria-labelledby="comments-heading" className="border-t border-line pt-6">
             <h3 id="comments-heading" className="eyebrow mb-5">Comments · {comments.length}</h3>
 
             {loading ? (
               <div className="space-y-4" aria-hidden="true">
-                {[0, 1].map((i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-ink-800" />)}
+                {[0, 1].map((i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-field" />)}
               </div>
             ) : comments.length === 0 ? (
-              <p className="mb-6 text-sm text-silver-500">No comments yet. Say hi, ask a question, or offer to help.</p>
+              <p className="mb-6 text-sm text-faint">No comments yet. Say hi, ask a question, or offer to help.</p>
             ) : (
               <ul className="mb-6 space-y-5">
                 {comments.map((c) => (
@@ -120,13 +120,13 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
                     <div className="min-w-0 flex-1">
                       <p className="text-sm">
                         <span className="font-semibold">{c.author?.name ?? "Unknown"}</span>
-                        <span className="ml-2 text-xs text-silver-500">{timeAgo(c.createdAt)}</span>
+                        <span className="ml-2 text-xs text-faint">{timeAgo(c.createdAt)}</span>
                       </p>
-                      <p className="mt-0.5 whitespace-pre-line text-sm text-silver-300 break-words">{c.content}</p>
+                      <p className="mt-0.5 whitespace-pre-line text-sm text-ink-2 break-words">{c.content}</p>
                     </div>
                     {c.author?.id === user?.id && (
                       <button type="button" onClick={() => remove(c.id)} aria-label="Delete comment"
-                        className="self-start rounded-full p-1.5 text-silver-500 opacity-0 transition-opacity hover:text-rose group-hover:opacity-100 focus-visible:opacity-100">
+                        className="self-start rounded-full p-1.5 text-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100 focus-visible:opacity-100">
                         <TrashIcon size={15} />
                       </button>
                     )}
@@ -135,7 +135,7 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
               </ul>
             )}
 
-            {error && <p role="alert" className="mb-4 text-sm text-rose">{error}</p>}
+            {error && <p role="alert" className="mb-4 text-sm text-danger">{error}</p>}
 
             <form onSubmit={submit} className="flex items-end gap-2">
               <label htmlFor="comment" className="sr-only">Write a comment</label>

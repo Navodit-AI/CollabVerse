@@ -51,7 +51,8 @@ export default function Home() {
         const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
         tl.from(".hero-eyebrow", { y: 20, opacity: 0, duration: 0.8 })
           .from(".hero-line .char", { yPercent: 110, rotate: 8, opacity: 0, duration: 1.1, stagger: 0.035 }, "-=0.5")
-          .from(".hero-sun", { scale: 0, duration: 1.4, ease: "elastic.out(1, 0.6)" }, "-=1.1")
+          .from(".hero-sage", { scale: 0, duration: 1.4, ease: "elastic.out(1, 0.6)" }, "-=1.1")
+          .from(".hero-dot", { scale: 0, duration: 1, ease: "back.out(2)" }, "-=0.9")
           .from(".hero-ring", { scale: 0.6, opacity: 0, duration: 1.2 }, "-=1.2")
           .from(".float-card", { y: 60, opacity: 0, duration: 1, stagger: 0.12 }, "-=1")
           .from(".hero-sub, .hero-cta", { y: 20, opacity: 0, duration: 0.8, stagger: 0.1 }, "-=0.9");
@@ -77,8 +78,8 @@ export default function Home() {
         };
         window.addEventListener("pointermove", onMove);
 
-        // Scroll: sun drifts and grows as you leave the hero
-        gsap.to(".hero-sun", {
+        // Scroll: tomato drifts and grows as you leave the hero
+        gsap.to(".hero-sage", {
           yPercent: 30, scale: 1.25, ease: "none",
           scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
         });
@@ -115,7 +116,7 @@ export default function Home() {
   return (
     <div ref={root} className="overflow-x-clip">
       {/* Nav */}
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-ink-700/40 bg-ink-950/60 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-line/40 bg-paper/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
           <Logo />
           <nav className="flex items-center gap-2">
@@ -129,20 +130,20 @@ export default function Home() {
       <section className="hero relative flex min-h-[100svh] items-center pt-28 pb-16">
         {/* Background composition */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="hero-sun absolute right-[-7rem] top-[7%] h-[18rem] w-[18rem] rounded-full bg-sun sm:right-[-6rem] sm:h-[34rem] sm:w-[34rem] lg:right-[4%] lg:top-[12%] lg:h-[38rem] lg:w-[38rem]" />
-          <div className="hero-ring absolute right-[6rem] top-[30%] h-[26rem] w-[26rem] rounded-full border-[3px] border-silver-100/90 hidden md:block lg:right-[26%]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgb(14_15_17/0.95),transparent_60%)]" />
-        </div>
+          <div className="hero-sage absolute right-[-7rem] top-[7%] h-[18rem] w-[18rem] rounded-full bg-sage sm:right-[-6rem] sm:h-[34rem] sm:w-[34rem] lg:right-[4%] lg:top-[12%] lg:h-[38rem] lg:w-[38rem]" />
+          <div className="hero-dot absolute right-[38%] top-[16%] hidden h-20 w-20 rounded-full bg-tomato md:block lg:right-[44%]" />
+          <div className="hero-ring absolute right-[6rem] top-[30%] h-[26rem] w-[26rem] rounded-full border-[3px] border-ink/90 hidden md:block lg:right-[26%]" />
+                  </div>
 
         {/* Floating UI fragments */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden md:block">
           <FloatingCard depth={1.2} className="right-[8%] top-[24%] w-64 rotate-[-4deg]">
             <div className="mb-3 flex items-center justify-between">
               <span className="chip">AI / ML</span>
-              <span className="flex items-center gap-1 text-xs text-mint"><span className="h-1.5 w-1.5 rounded-full bg-mint" />Open</span>
+              <span className="flex items-center gap-1 text-xs text-sage-deep"><span className="h-1.5 w-1.5 rounded-full bg-sage-deep" />Open</span>
             </div>
             <p className="mb-1 font-semibold">Study-buddy matcher</p>
-            <p className="text-xs text-silver-400">Needs: Python, Figma</p>
+            <p className="text-xs text-muted">Needs: Python, Figma</p>
           </FloatingCard>
 
           <FloatingCard depth={-0.8} className="right-[30%] top-[58%] w-56 rotate-[3deg]">
@@ -150,27 +151,27 @@ export default function Home() {
               <Avatar name="Maya" size={34} />
               <div>
                 <p className="text-sm font-semibold">Maya joined</p>
-                <p className="text-xs text-silver-400">Designer · Figma, Motion</p>
+                <p className="text-xs text-muted">Designer · Figma, Motion</p>
               </div>
             </div>
           </FloatingCard>
 
           <FloatingCard depth={1.8} className="right-[5%] top-[66%] w-auto rotate-[6deg] rounded-full px-5 py-3">
-            <span className="flex items-center gap-2 text-sm font-semibold text-sun"><HeartIcon filled size={16} /> 128</span>
+            <span className="flex items-center gap-2 text-sm font-semibold text-tomato-deep"><HeartIcon filled size={16} /> 128</span>
           </FloatingCard>
 
-          <FloatingCard depth={-1.4} className="right-[40%] top-[20%] w-auto rotate-[-8deg] rounded-full border-sun/40 px-4 py-2.5">
-            <span className="flex items-center gap-2 text-sm"><SparkIcon size={15} className="text-sun" /> Verse: &ldquo;here&rsquo;s a 4-week plan&rdquo;</span>
+          <FloatingCard depth={-1.4} className="right-[40%] top-[20%] w-auto rotate-[-8deg] rounded-full border-tomato/40 px-4 py-2.5">
+            <span className="flex items-center gap-2 text-sm"><SparkIcon size={15} className="text-tomato" /> Verse: &ldquo;here&rsquo;s a 4-week plan&rdquo;</span>
           </FloatingCard>
         </div>
 
         <div className="relative mx-auto w-full max-w-7xl px-5 sm:px-8">
-          <p className="hero-eyebrow eyebrow mb-8 mix-blend-difference">Collaboration for students &amp; makers</p>
-          <h1 className="display text-[clamp(4.5rem,15vw,13rem)] leading-[0.85] mix-blend-difference">
+          <p className="hero-eyebrow eyebrow mb-8">Collaboration for students &amp; makers</p>
+          <h1 className="display text-[clamp(4.5rem,15vw,13rem)] leading-[0.85]">
             <span className="hero-line block overflow-hidden pb-[0.08em]"><SplitChars text="Build it" /></span>
             <span className="hero-line block overflow-hidden pb-[0.12em] italic"><SplitChars text="together." /></span>
           </h1>
-          <p className="hero-sub mt-8 max-w-md text-lg text-silver-100 mix-blend-difference">
+          <p className="hero-sub mt-8 max-w-md text-lg text-ink-2">
             Post the idea. Find the designer, the dev, the PM. Ship the thing you&rsquo;ve been putting off.
           </p>
           <div className="hero-cta mt-10 flex flex-wrap items-center gap-3">
@@ -183,11 +184,11 @@ export default function Home() {
       </section>
 
       {/* Skills marquee */}
-      <div aria-hidden="true" className="relative border-y border-ink-700 bg-ink-900 py-6 overflow-hidden">
+      <div aria-hidden="true" className="relative bg-sage py-6 overflow-hidden">
         <div className="flex w-max animate-[marquee_40s_linear_infinite] gap-12 pr-12">
           {[...SKILLS, ...SKILLS].map((s, i) => (
-            <span key={i} className="display flex items-center gap-12 text-4xl text-silver-300 whitespace-nowrap">
-              {s} <span className="h-3 w-3 rounded-full bg-sun" />
+            <span key={i} className="display flex items-center gap-12 text-4xl text-ink whitespace-nowrap">
+              {s} <span className="h-3 w-3 rounded-full bg-paper" />
             </span>
           ))}
         </div>
@@ -197,47 +198,47 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-5 py-32 sm:px-8">
         <p className="reveal eyebrow mb-6">How it works</p>
         <h2 className="reveal display mb-20 max-w-4xl text-5xl sm:text-7xl">
-          From &ldquo;what if&rdquo; to <em className="text-sun">shipped</em>, in three moves.
+          From &ldquo;what if&rdquo; to <em className="text-tomato">shipped</em>, in three moves.
         </h2>
         <div className="steps grid gap-5 md:grid-cols-3">
           {STEPS.map((s) => (
-            <div key={s.n} className="step card group p-8 transition-colors duration-500 hover:border-sun/50">
-              <p className="display mb-16 text-8xl text-ink-600 transition-colors duration-500 group-hover:text-sun">{s.n}</p>
+            <div key={s.n} className="step card group p-8 transition-colors duration-500 hover:border-tomato/50">
+              <p className="display mb-16 text-8xl text-line-strong transition-colors duration-500 group-hover:text-tomato">{s.n}</p>
               <h3 className="mb-3 text-2xl font-semibold">{s.title}</h3>
-              <p className="text-silver-400">{s.body}</p>
+              <p className="text-muted">{s.body}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* AI section */}
-      <section className="border-y border-ink-700 bg-ink-900">
+      <section className="bg-sage-soft">
         <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 py-32 sm:px-8 lg:grid-cols-2">
           <div>
-            <p className="reveal eyebrow mb-6 flex items-center gap-2"><SparkIcon size={14} className="text-sun" /> Meet Verse</p>
+            <p className="reveal eyebrow mb-6 flex items-center gap-2"><SparkIcon size={14} className="text-tomato" /> Meet Verse</p>
             <h2 className="reveal display mb-8 text-5xl sm:text-7xl">
-              An AI co-pilot that knows <em className="text-sun">who&rsquo;s here.</em>
+              An AI co-pilot that knows <em className="text-tomato">who&rsquo;s here.</em>
             </h2>
-            <p className="reveal max-w-md text-lg text-silver-400">
+            <p className="reveal max-w-md text-lg text-muted">
               Verse sees the open projects and the people on CollabVerse, so it can match you with a team,
               tighten your pitch, and plan your first sprint.
             </p>
           </div>
 
           <div className="chat-demo card mx-auto w-full max-w-md space-y-4 p-6">
-            <div className="chat-bubble ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-silver-100 px-4 py-2.5 text-sm text-ink-950">
+            <div className="chat-bubble ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-sm text-paper">
               I know React. Any projects I could join?
             </div>
-            <div className="chat-bubble mr-6 space-y-2 text-sm text-silver-300">
-              <p className="flex items-center gap-2 font-semibold text-silver-100"><SparkIcon size={14} className="text-sun" /> Verse</p>
+            <div className="chat-bubble mr-6 space-y-2 text-sm text-ink-2">
+              <p className="flex items-center gap-2 font-semibold text-ink"><SparkIcon size={14} className="text-tomato" /> Verse</p>
               <p>Two open projects need React right now:</p>
-              <ul className="list-disc space-y-1 pl-5 marker:text-sun">
-                <li><strong className="text-silver-100">Campus lost &amp; found</strong>: needs a frontend lead</li>
-                <li><strong className="text-silver-100">Study-buddy matcher</strong>: React + Python</li>
+              <ul className="list-disc space-y-1 pl-5 marker:text-tomato">
+                <li><strong className="text-ink">Campus lost &amp; found</strong>: needs a frontend lead</li>
+                <li><strong className="text-ink">Study-buddy matcher</strong>: React + Python</li>
               </ul>
               <p>Want me to draft an intro message to the first one?</p>
             </div>
-            <div className="chat-bubble ml-auto w-fit rounded-2xl rounded-br-md bg-silver-100 px-4 py-2.5 text-sm text-ink-950">
+            <div className="chat-bubble ml-auto w-fit rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-sm text-paper">
               Yes please 🙌
             </div>
           </div>
@@ -246,11 +247,11 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="cta relative overflow-hidden px-5 pt-40 pb-64 text-center sm:px-8">
-        <div aria-hidden="true" className="absolute left-1/2 top-full h-[60rem] w-[60rem] -translate-x-1/2 -translate-y-[16%] rounded-full bg-sun" />
+        <div aria-hidden="true" className="absolute left-1/2 top-full h-[60rem] w-[60rem] -translate-x-1/2 -translate-y-[16%] rounded-full bg-sage" />
         <div className="relative">
           <h2 className="display mx-auto mb-12 max-w-5xl text-[clamp(3.5rem,9vw,8rem)] leading-[0.9]">
             <span className="cta-line block overflow-hidden"><SplitChars text="Your next team is" /></span>
-            <span className="cta-line block overflow-hidden italic text-sun"><SplitChars text="one post away." /></span>
+            <span className="cta-line block overflow-hidden italic text-tomato"><SplitChars text="one post away." /></span>
           </h2>
           <Link href="/signup" className="btn btn-primary px-8 py-4 text-base">
             Create your free account <ArrowIcon size={18} />
@@ -258,8 +259,8 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative border-t border-ink-700 bg-ink-950">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-silver-500 sm:flex-row sm:px-8">
+      <footer className="relative border-t border-line bg-paper">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-faint sm:flex-row sm:px-8">
           <Logo />
           <p>&copy; {new Date().getFullYear()} CollabVerse. Made by makers, for makers.</p>
         </div>

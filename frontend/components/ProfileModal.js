@@ -26,18 +26,18 @@ function SkillInput({ skills, onChange }) {
 
   return (
     <div>
-      <div className="field flex min-h-[52px] flex-wrap items-center gap-2 py-2 focus-within:border-sun focus-within:shadow-[0_0_0_3px_rgb(255_201_60/0.15)]">
+      <div className="field flex min-h-[52px] flex-wrap items-center gap-2 py-2 focus-within:border-tomato focus-within:shadow-[0_0_0_3px_rgb(214_61_39/0.15)]">
         {skills.map((s) => (
-          <span key={s} className="inline-flex items-center gap-1 rounded-full bg-silver-100 py-1 pl-3 pr-1.5 text-sm font-medium text-ink-950 animate-[modal-in_0.25s_var(--ease-spring)_both]">
+          <span key={s} className="inline-flex items-center gap-1 rounded-full bg-ink py-1 pl-3 pr-1.5 text-sm font-medium text-paper animate-[modal-in_0.25s_var(--ease-spring)_both]">
             {s}
-            <button type="button" onClick={() => remove(s)} aria-label={`Remove ${s}`} className="rounded-full p-0.5 hover:bg-ink-950/10">
+            <button type="button" onClick={() => remove(s)} aria-label={`Remove ${s}`} className="rounded-full p-0.5 hover:bg-paper/10">
               <CloseIcon size={13} />
             </button>
           </span>
         ))}
         <input
           id="skill-input"
-          className="min-w-[8rem] flex-1 bg-transparent py-1 text-silver-100 outline-none placeholder:text-silver-500"
+          className="min-w-[8rem] flex-1 bg-transparent py-1 text-ink outline-none placeholder:text-faint"
           placeholder={skills.length ? "Add another…" : "Type a skill and press Enter"}
           value={draft}
           maxLength={MAX_SKILL_LENGTH + 1}
@@ -58,7 +58,7 @@ function SkillInput({ skills, onChange }) {
         <div className="mt-3 flex flex-wrap gap-1.5">
           {suggestions.slice(0, 8).map((s) => (
             <button key={s} type="button" onClick={() => add(s)}
-              className="rounded-full border border-dashed border-ink-600 px-3 py-1 text-xs text-silver-400 transition-colors hover:border-sun/60 hover:text-silver-100">
+              className="rounded-full border border-dashed border-line-strong px-3 py-1 text-xs text-muted transition-colors hover:border-tomato/60 hover:text-ink">
               + {s}
             </button>
           ))}
@@ -102,12 +102,12 @@ export default function ProfileModal({ open, onClose, onSaved, user, welcome = f
           <Avatar name={user?.name} size={52} />
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold">{user?.name}</p>
-            <p className="truncate text-sm text-silver-400">{user?.email}</p>
+            <p className="truncate text-sm text-muted">{user?.email}</p>
           </div>
         </div>
 
         {welcome && (
-          <p className="text-silver-300">
+          <p className="text-ink-2">
             Tell people what you do. Your role and skills show on the People tab and help Verse match you with projects.
           </p>
         )}
@@ -118,7 +118,7 @@ export default function ProfileModal({ open, onClose, onSaved, user, welcome = f
             {ROLES.map((r) => (
               <button key={r} type="button" aria-pressed={role === r} onClick={() => setRole(r)}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                  role === r ? "border-silver-100 bg-silver-100 text-ink-950" : "border-ink-600 text-silver-300 hover:border-silver-400"
+                  role === r ? "border-ink bg-ink text-paper" : "border-line-strong text-ink-2 hover:border-muted"
                 }`}>
                 {r}
               </button>
@@ -128,12 +128,12 @@ export default function ProfileModal({ open, onClose, onSaved, user, welcome = f
 
         <div>
           <label htmlFor="skill-input" className="label">
-            Skills <span className="text-silver-500">({skills.length}/{MAX_SKILLS})</span>
+            Skills <span className="text-faint">({skills.length}/{MAX_SKILLS})</span>
           </label>
           <SkillInput skills={skills} onChange={setSkills} />
         </div>
 
-        {error && <p role="alert" className="text-sm text-rose">{error}</p>}
+        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={saving} className="btn btn-primary flex-1 py-3">
