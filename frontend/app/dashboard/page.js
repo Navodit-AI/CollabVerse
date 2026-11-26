@@ -365,6 +365,9 @@ export default function Dashboard() {
         }}
         onSetStatus={setPostStatus}
         onDelete={deletePost}
+        onPendingChange={(id, delta) =>
+          updatePost(id, (p) => ({ ...p, pendingRequests: Math.max(0, (p.pendingRequests ?? 0) + delta) }))
+        }
       />
 
       <ChatWidget />

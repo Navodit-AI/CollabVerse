@@ -23,7 +23,7 @@ function Person({ person, children }) {
 
 // Team + "Ask to join" for one project. The owner sees and answers requests;
 // everyone else can send one request and follow its status.
-export default function JoinSection({ post }) {
+export default function JoinSection({ post, onPendingChange }) {
   const [data, setData] = useState(null); // { isOwner, team, mine, requests }
   const [error, setError] = useState("");
   const [composing, setComposing] = useState(false);
@@ -73,6 +73,7 @@ export default function JoinSection({ post }) {
         requests: d.requests.map((r) => (r.id === updated.id ? updated : r)),
         team: status === "Accepted" ? [...d.team, updated.user] : d.team,
       }));
+      onPendingChange?.(-1); // one fewer pending request for the card badge
     });
 
   if (!data) {
