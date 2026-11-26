@@ -7,6 +7,7 @@ export const LIMITS = {
   title: 120,
   description: 3000,
   comment: 1000,
+  joinMessage: 500,
   name: 60,
   skills: 20,
   skill: 30,

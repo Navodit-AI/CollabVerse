@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Overlay from "./Overlay";
 import Avatar from "./Avatar";
+import JoinSection from "./JoinSection";
 import { LikeButton, StatusDot, domainLabel } from "./PostCard";
 import { SendIcon, TrashIcon } from "./Icons";
 import { api } from "@/lib/api";
@@ -149,6 +150,10 @@ export default function PostDrawer({ post, user, onClose, onToggleLike, onCommen
               </div>
             </div>
           )}
+
+          <section aria-label="Team and join requests" className="mb-8 border-t border-line pt-6">
+            <JoinSection post={post} />
+          </section>
 
           <section aria-labelledby="comments-heading" className="border-t border-line pt-6">
             <h3 id="comments-heading" className="eyebrow mb-5">Comments · {comments.length}</h3>

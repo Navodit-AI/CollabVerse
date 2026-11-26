@@ -7,6 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import requestRoutes from "./routes/requestRoutes.js";
 
 const app = express();
 
@@ -22,7 +23,7 @@ const allowedOrigins = (process.env.FRONTEND_URL || "")
 
 app.use(cors({
   origin: allowedOrigins.length ? allowedOrigins : "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: false,
 }));
 
@@ -47,6 +48,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/likes", likeRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/requests", requestRoutes);
 
 // ✅ Start server
 const PORT = process.env.PORT || 8080;
